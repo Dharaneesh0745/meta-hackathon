@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "jira-to-pr"
+version = "1.0.0"
+description = "A Mock Software Agency OpenEnv environment where an AI agent resolves Jira tickets by editing code and submitting PRs."
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core",
+    "pydantic>=2.0",
+    "openai",
+    "fastapi",
+    "uvicorn[standard]",
+    "pytest",
+    "python-dotenv",
+    "websockets",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[tool.setuptools]
+packages = ["server"]

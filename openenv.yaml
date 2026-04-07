@@ -1,0 +1,17 @@
+name: "jira-to-pr"
+version: "1.0.0"
+description: "A Mock Software Agency environment where an AI agent resolves Jira tickets by editing code, running tests, and submitting PRs."
+tasks:
+  - id: "easy-ticket"
+    difficulty: "easy"
+    description: "Fix a DEBUG boolean flag in config.py — set it to False for production."
+  - id: "medium-ticket"
+    difficulty: "medium"
+    description: "Fix a broken email validation regex in auth.py that incorrectly accepts invalid emails."
+  - id: "hard-ticket"
+    difficulty: "hard"
+    description: "Add a new handle_submit function to server.py that processes POST /submit requests."
+entrypoint:
+  type: "python"
+  path: "env.py"
+  class: "MockAgencyEnv"

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira-to-PR | AI Mock Agency</title>
+    <meta name="description" content="An AI-powered Jira-to-PR simulation environment for OpenEnv. Watch an autonomous agent resolve tickets, edit code, run tests, and submit PRs in real-time.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-card: #1c2128;
+            --border: #30363d;
+            --border-hover: #484f58;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-blue: #58a6ff;
+            --accent-purple: #bc8cff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-orange: #db6d28;
+            --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            --gradient-btn: linear-gradient(135deg, #8b5cf6, #6366f1, #3b82f6);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── HEADER ──────────────────────── */
+        .app-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .logo-badge {
+            font-size: 0.65rem;
+            background: var(--gradient-btn);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .header-right { display: flex; gap: 12px; align-items: center; }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+        }
+        .status-text { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* ── MAIN LAYOUT ─────────────────── */
+        .app-body {
+            display: flex;
+            height: calc(100vh - 65px);
+        }
+
+        /* ── SIDEBAR ─────────────────────── */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+        .sidebar-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Task selector */
+        .task-list { display: flex; flex-direction: column; gap: 8px; }
+        .task-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .task-item::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            transition: var(--transition);
+        }
+        .task-item.easy::before { background: var(--accent-green); }
+        .task-item.medium::before { background: var(--accent-yellow); }
+        .task-item.hard::before { background: var(--accent-red); }
+        .task-item:hover { border-color: var(--border-hover); transform: translateX(4px); }
+        .task-item.active { border-color: var(--accent-blue); background: rgba(88, 166, 255, 0.08); }
+        .task-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+        .task-title { font-size: 0.85rem; font-weight: 500; margin-top: 4px; }
+        .diff-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .diff-badge.easy { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+        .diff-badge.medium { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+        .diff-badge.hard { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+
+        /* Launch button */
+        .launch-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-btn);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+        .launch-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        .launch-btn:active { transform: translateY(0); }
+        .launch-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Score card */
+        .score-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+        .score-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); }
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 8px 0;
+        }
+        .score-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            background: var(--gradient-btn);
+            border-radius: 3px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+        }
+
+        /* ── MAIN CONTENT ────────────────── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+        }
+        .tab-btn {
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* Tab panels */
+        .tab-panels { flex: 1; overflow: hidden; }
+        .tab-panel { display: none; height: 100%; overflow-y: auto; padding: 24px; }
+        .tab-panel.active { display: block; }
+
+        /* ── KANBAN ──────────────────────── */
+        .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; height: 100%; }
+        .kanban-col {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .kanban-col-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kanban-col-count {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+        .kanban-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-bottom: 10px;
+            transition: var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+        .kanban-card:hover { border-color: var(--border-hover); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .kanban-card-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent-blue); }
+        .kanban-card-title { font-size: 0.82rem; font-weight: 500; margin-top: 4px; }
+        .kanban-card-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; display: flex; gap: 8px; }
+
+        /* ── CODE EDITOR ─────────────────── */
+        .editor-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; height: 100%; }
+        .code-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .code-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .code-panel-header .file-icon { color: var(--accent-yellow); }
+        .code-content {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+        .line-del { background: rgba(248, 81, 73, 0.1); color: var(--accent-red); display: block; padding: 0 8px; border-left: 3px solid var(--accent-red); }
+        .line-add { background: rgba(63, 185, 80, 0.1); color: var(--accent-green); display: block; padding: 0 8px; border-left: 3px solid var(--accent-green); }
+        .line-norm { display: block; padding: 0 8px; border-left: 3px solid transparent; color: var(--text-secondary); }
+
+        /* Terminal */
+        .terminal-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .terminal-dots { display: flex; gap: 6px; }
+        .terminal-dots span { width: 10px; height: 10px; border-radius: 50%; }
+        .terminal-dots span:nth-child(1) { background: var(--accent-red); }
+        .terminal-dots span:nth-child(2) { background: var(--accent-yellow); }
+        .terminal-dots span:nth-child(3) { background: var(--accent-green); }
+        .terminal-body {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            padding: 12px 16px;
+            overflow: auto;
+            color: var(--accent-green);
+            background: #010409;
+        }
+
+        /* ── REWARDS TAB ─────────────────── */
+        .rewards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .reward-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .reward-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+        .reward-icon { font-size: 2rem; margin-bottom: 8px; }
+        .reward-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .reward-val { font-size: 1.8rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+        .log-timeline {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: slideIn 0.3s ease;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-step-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            background: var(--bg-tertiary);
+            color: var(--accent-purple);
+            padding: 2px 10px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .log-message { color: var(--text-secondary); flex: 1; }
+        .log-reward { font-family: 'JetBrains Mono', monospace; font-weight: 600; white-space: nowrap; }
+        .log-reward.positive { color: var(--accent-green); }
+        .log-reward.negative { color: var(--accent-red); }
+        .log-reward.neutral { color: var(--text-muted); }
+
+        /* ── RESPONSIVE ──────────────────── */
+        @media (max-width: 1024px) {
+            .sidebar { width: 220px; min-width: 220px; }
+            .kanban-board { grid-template-columns: repeat(2, 1fr); }
+            .editor-layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .app-body { flex-direction: column; }
+            .sidebar { width: 100%; min-width: unset; flex-direction: row; flex-wrap: wrap; }
+            .kanban-board { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────────── -->
+<header class="app-header">
+    <div class="header-left">
+        <span class="logo">⚡ Jira-to-PR</span>
+        <span class="logo-badge">OpenEnv</span>
+    </div>
+    <div class="header-right">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Ready</span>
+    </div>
+</header>
+
+<!-- ── BODY ──────────────────────────────── -->
+<div class="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3>Sprint Tasks</h3>
+            <div class="task-list" id="taskList">
+                <div class="task-item easy active" data-task="easy-ticket" onclick="selectTask(this)">
+                    <div class="task-id">EASY-101</div>
+                    <div class="task-title">Fix DEBUG flag in config.py</div>
+                    <span class="diff-badge easy">Easy</span>
+                </div>
+                <div class="task-item medium" data-task="medium-ticket" onclick="selectTask(this)">
+                    <div class="task-id">MED-201</div>
+                    <div class="task-title">Fix email validation regex</div>
+                    <span class="diff-badge medium">Medium</span>
+                </div>
+                <div class="task-item hard" data-task="hard-ticket" onclick="selectTask(this)">
+                    <div class="task-id">HRD-301</div>
+                    <div class="task-title">Add POST /submit endpoint</div>
+                    <span class="diff-badge hard">Hard</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="launch-btn" id="launchBtn" onclick="runAgent()">▶ Launch Agent</button>
+
+        <div class="score-card">
+            <div class="score-label">Episode Score</div>
+            <div class="score-value" id="scoreValue">0.00</div>
+            <div class="score-bar-bg"><div class="score-bar-fill" id="scoreBar"></div></div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Environment</h3>
+            <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.6;">
+                <div>Steps: <span id="stepCount" style="color:var(--text-primary); font-family:'JetBrains Mono',monospace;">0</span></div>
+                <div>Task: <span id="activeTask" style="color:var(--accent-blue); font-family:'JetBrains Mono',monospace;">easy-ticket</span></div>
+                <div>Status: <span id="envStatus" style="color:var(--accent-green);">idle</span></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('kanban', this)">📋 Kanban Board</button>
+            <button class="tab-btn" onclick="switchTab('editor', this)">💻 Code Editor</button>
+            <button class="tab-btn" onclick="switchTab('rewards', this)">📊 Rewards</button>
+        </div>
+        <div class="tab-panels">
+
+            <!-- KANBAN -->
+            <div class="tab-panel active" id="tab-kanban">
+                <div class="kanban-board">
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">📥 Backlog <span class="kanban-col-count" id="backlogCount">3</span></div>
+                        <div id="backlogCards">
+                            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
+                        </div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">🔧 In Progress <span class="kanban-col-count" id="progressCount">0</span></div>
+                        <div id="progressCards"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">🧪 Testing <span class="kanban-col-count" id="testingCount">0</span></div>
+                        <div id="testingCards"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">✅ Done <span class="kanban-col-count" id="doneCount">0</span></div>
+                        <div id="doneCards"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CODE EDITOR -->
+            <div class="tab-panel" id="tab-editor">
+                <div class="editor-layout">
+                    <div class="code-panel">
+                        <div class="code-panel-header">
+                            <span class="file-icon">📄</span>
+                            <span id="editorFileName">Awaiting agent...</span>
+                        </div>
+                        <div class="code-content" id="editorCode"><span class="line-norm">// Agent will edit code here during execution</span>
+<span class="line-norm">// Press "Launch Agent" to begin</span></div>
+                    </div>
+                    <div class="terminal-panel">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span></span><span></span><span></span></div>
+                            Terminal
+                        </div>
+                        <div class="terminal-body" id="terminalOutput">$ Waiting for agent commands...\n</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REWARDS -->
+            <div class="tab-panel" id="tab-rewards">
+                <div class="rewards-grid">
+                    <div class="reward-card">
+                        <div class="reward-icon">✏️</div>
+                        <div class="reward-label">Edit Rewards</div>
+                        <div class="reward-val" id="editReward" style="color:var(--accent-blue);">0.0</div>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🧪</div>
+                        <div class="reward-label">Test Rewards</div>
+                        <div class="reward-val" id="testReward" style="color:var(--accent-green);">0.0</div>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🚀</div>
+                        <div class="reward-label">PR Reward</div>
+                        <div class="reward-val" id="prReward" style="color:var(--accent-purple);">0.0</div>
+                    </div>
+                </div>
+                <h3 style="margin-bottom:12px; font-size:0.85rem; color:var(--text-secondary);">Step Timeline</h3>
+                <div class="log-timeline" id="logTimeline">
+                    <div class="log-entry">
+                        <span class="log-step-badge">SYS</span>
+                        <span class="log-message">Waiting for agent launch...</span>
+                        <span class="log-reward neutral">—</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    // ── STATE ────────────────────────────
+    let selectedTask = 'easy-ticket';
+    let isRunning = false;
+    let totalEditReward = 0;
+    let totalTestReward = 0;
+    let totalPRReward = 0;
+    let stepNum = 0;
+
+    // ── TAB SWITCHING ───────────────────
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // ── TASK SELECTION ──────────────────
+    function selectTask(el) {
+        if (isRunning) return;
+        document.querySelectorAll('.task-item').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        selectedTask = el.dataset.task;
+        document.getElementById('activeTask').textContent = selectedTask;
+    }
+
+    // ── KANBAN HELPERS ──────────────────
+    function moveToColumn(cardHtml, from, to) {
+        const fromEl = document.getElementById(from);
+        const toEl = document.getElementById(to);
+        toEl.insertAdjacentHTML('beforeend', cardHtml);
+        updateCounts();
+    }
+
+    function updateCounts() {
+        document.getElementById('backlogCount').textContent = document.getElementById('backlogCards').children.length;
+        document.getElementById('progressCount').textContent = document.getElementById('progressCards').children.length;
+        document.getElementById('testingCount').textContent = document.getElementById('testingCards').children.length;
+        document.getElementById('doneCount').textContent = document.getElementById('doneCards').children.length;
+    }
+
+    // ── SCORE UPDATE ────────────────────
+    function updateScore(score) {
+        const display = Math.max(0, Math.min(1, score)).toFixed(2);
+        document.getElementById('scoreValue').textContent = display;
+        document.getElementById('scoreBar').style.width = (score * 100) + '%';
+    }
+
+    // ── TERMINAL APPEND ─────────────────
+    function appendTerminal(text) {
+        const term = document.getElementById('terminalOutput');
+        term.textContent += text + '\n';
+        term.scrollTop = term.scrollHeight;
+    }
+
+    // ── LOG ENTRY ───────────────────────
+    function addLogEntry(step, message, reward) {
+        const timeline = document.getElementById('logTimeline');
+        const cls = reward > 0 ? 'positive' : reward < 0 ? 'negative' : 'neutral';
+        const sign = reward > 0 ? '+' : '';
+        timeline.insertAdjacentHTML('beforeend', `
+            <div class="log-entry">
+                <span class="log-step-badge">Step ${step}</span>
+                <span class="log-message">${message}</span>
+                <span class="log-reward ${cls}">${sign}${reward.toFixed(2)}</span>
+            </div>
+        `);
+        timeline.scrollTop = timeline.scrollHeight;
+    }
+
+    // ── CODE DISPLAY ────────────────────
+    function showCode(filename, lines) {
+        document.getElementById('editorFileName').textContent = filename;
+        const codeEl = document.getElementById('editorCode');
+        codeEl.innerHTML = lines.map(l => {
+            const escaped = l.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            if (l.type === 'add') return `<span class="line-add">+ ${escaped}</span>`;
+            if (l.type === 'del') return `<span class="line-del">- ${escaped}</span>`;
+            return `<span class="line-norm">  ${escaped}</span>`;
+        }).join('\n');
+    }
+
+    // ── AGENT SIMULATION ────────────────
+    // Task metadata
+    const ALL_TASKS = [
+        {taskId:'easy-ticket', id:'EASY-101', title:'Fix DEBUG flag', file:'config.py', diff:'easy'},
+        {taskId:'medium-ticket', id:'MED-201', title:'Fix email validation', file:'auth.py', diff:'medium'},
+        {taskId:'hard-ticket', id:'HRD-301', title:'Add POST /submit', file:'server.py', diff:'hard'}
+    ];
+
+    // Code fixes + diffs per task
+    const FIXES = {
+        'easy-ticket': {
+            file: 'config.py',
+            content: "# Application Configuration\n\nAPP_NAME = 'JiraPR Agency'\nVERSION = '1.0.0'\nDEBUG = False  # Fixed: disabled in production\nLOG_LEVEL = 'INFO'\n",
+            diff: [
+                {type:'norm', text:"# Application Configuration"},
+                {type:'norm', text:""},
+                {type:'norm', text:"APP_NAME = 'JiraPR Agency'"},
+                {type:'norm', text:"VERSION = '1.0.0'"},
+                {type:'del',  text:"DEBUG = True  # BUG: Must be False in production!"},
+                {type:'add',  text:"DEBUG = False  # Fixed: disabled in production"},
+                {type:'norm', text:"LOG_LEVEL = 'INFO'"},
+            ]
+        },
+        'medium-ticket': {
+            file: 'auth.py',
+            content: "import re\n\ndef validate_email(email: str) -> bool:\n    \"\"\"Validate an email address.\"\"\"\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return bool(re.match(pattern, email))\n",
+            diff: [
+                {type:'norm', text:"import re"},
+                {type:'norm', text:""},
+                {type:'norm', text:"def validate_email(email: str) -> bool:"},
+                {type:'norm', text:'    """Validate an email address."""'},
+                {type:'del',  text:"    return '@' in email"},
+                {type:'add',  text:"    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'"},
+                {type:'add',  text:"    return bool(re.match(pattern, email))"},
+            ]
+        },
+        'hard-ticket': {
+            file: 'server.py',
+            content: "# Simple API Server\n\ndef handle_health():\n    return {'status': 'healthy'}\n\ndef handle_submit(body: dict) -> dict:\n    data = body.get('data', '')\n    return {'status': 'received', 'length': len(data)}\n",
+            diff: [
+                {type:'norm', text:"# Simple API Server"},
+                {type:'norm', text:""},
+                {type:'norm', text:"def handle_health():"},
+                {type:'norm', text:"    return {'status': 'healthy'}"},
+                {type:'norm', text:""},
+                {type:'del',  text:"# TODO: Add handle_submit endpoint here"},
+                {type:'add',  text:"def handle_submit(body: dict) -> dict:"},
+                {type:'add',  text:"    data = body.get('data', '')"},
+                {type:'add',  text:"    return {'status': 'received', 'length': len(data)}"},
+            ]
+        }
+    };
+
+    function removeBacklogCard(taskId) {
+        const backlog = document.getElementById('backlogCards');
+        const taskIdMap = {'easy-ticket':'EASY-101','medium-ticket':'MED-201','hard-ticket':'HRD-301'};
+        const targetId = taskIdMap[taskId];
+        Array.from(backlog.children).forEach(card => {
+            if (card.querySelector('.kanban-card-id')?.textContent === targetId) {
+                card.remove();
+            }
+        });
+    }
+
+    async function runSingleTask(t) {
+        const fix = FIXES[t.taskId];
+        document.getElementById('activeTask').textContent = t.taskId;
+
+        // Highlight sidebar task
+        document.querySelectorAll('.task-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.task-item[data-task="${t.taskId}"]`)?.classList.add('active');
+
+        // 1. RESET
+        appendTerminal('\n── Task: ' + t.id + ' ──────────────────');
+        appendTerminal('$ Resetting environment for task: ' + t.taskId);
+        const resetRes = await fetch('/reset', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task_id: t.taskId})
+        });
+        const resetData = await resetRes.json();
+        appendTerminal('> ' + resetData.observation.terminal_output);
+
+        // Move card: Backlog → In Progress
+        removeBacklogCard(t.taskId);
+        document.getElementById('progressCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>${t.file}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+        updateCounts();
+
+        await sleep(600);
+
+        // 2. READ TICKET
+        stepNum++;
+        appendTerminal('$ read_ticket ' + t.taskId);
+        const readRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({read_ticket: {ticket_id: t.taskId}})
+        });
+        const readData = await readRes.json();
+        appendTerminal('> ' + truncate(readData.observation.terminal_output, 200));
+        addLogEntry(stepNum, 'Read ticket: ' + t.id, 0);
+        document.getElementById('stepCount').textContent = stepNum;
+
+        await sleep(800);
+
+        // 3. EDIT FILE
+        stepNum++;
+        showCode(fix.file, fix.diff);
+        appendTerminal('$ edit_file ' + fix.file);
+        const editRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({edit_file: {file_path: fix.file, new_content: fix.content}})
+        });
+        const editData = await editRes.json();
+        appendTerminal('> ' + editData.observation.terminal_output);
+        totalEditReward += 0.2;
+        document.getElementById('editReward').textContent = (totalEditReward / ALL_TASKS.length).toFixed(2);
+        addLogEntry(stepNum, 'Edited ' + fix.file, 0.2);
+        document.getElementById('stepCount').textContent = stepNum;
+
+        await sleep(1000);
+
+        // 4. RUN TESTS — Move to Testing column
+        stepNum++;
+        document.getElementById('progressCards').innerHTML = '';
+        document.getElementById('testingCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Running pytest...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+        updateCounts();
+
+        appendTerminal('$ run_tests test_task.py');
+        const testRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({run_tests: {target: 'test_task.py'}})
+        });
+        const testData = await testRes.json();
+        appendTerminal('> Tests result: ' + truncate(testData.observation.terminal_output, 200));
+        const testPassed = testData.observation.terminal_output.toLowerCase().includes('passed');
+        const testReward = testPassed ? 0.3 : -0.1;
+        totalTestReward += testReward;
+        document.getElementById('testReward').textContent = (totalTestReward / ALL_TASKS.length).toFixed(2);
+        addLogEntry(stepNum, testPassed ? 'Tests PASSED' : 'Tests FAILED', testReward);
+        document.getElementById('stepCount').textContent = stepNum;
+
+        await sleep(1000);
+
+        // 5. SUBMIT PR
+        stepNum++;
+        appendTerminal('$ submit_pr ' + t.taskId);
+        const prRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({submit_pr: {ticket_id: t.taskId, title: 'Fix: ' + t.title}})
+        });
+        const prData = await prRes.json();
+        appendTerminal('> ' + prData.observation.terminal_output);
+        const prMerged = prData.observation.terminal_output.includes('Merged');
+        const prReward = prMerged ? 0.5 : -0.2;
+        totalPRReward += prReward;
+        document.getElementById('prReward').textContent = (totalPRReward / ALL_TASKS.length).toFixed(2);
+        addLogEntry(stepNum, prMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', prReward);
+        document.getElementById('stepCount').textContent = stepNum;
+
+        // Move: Testing → Done
+        document.getElementById('testingCards').innerHTML = '';
+        const resultEmoji = prMerged ? '✅' : '❌';
+        document.getElementById('doneCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ${resultEmoji}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Score: ${prData.reward.toFixed(2)}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
+        updateCounts();
+
+        return prData.reward;
+    }
+
+    async function runAgent() {
+        if (isRunning) return;
+        isRunning = true;
+
+        const btn = document.getElementById('launchBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Running all tasks...';
+        document.getElementById('envStatus').textContent = 'running';
+        document.getElementById('envStatus').style.color = 'var(--accent-yellow)';
+        document.getElementById('statusText').textContent = 'Agent active';
+        document.getElementById('terminalOutput').textContent = '';
+
+        // Reset state
+        totalEditReward = 0; totalTestReward = 0; totalPRReward = 0; stepNum = 0;
+        document.getElementById('editReward').textContent = '0.0';
+        document.getElementById('testReward').textContent = '0.0';
+        document.getElementById('prReward').textContent = '0.0';
+        document.getElementById('logTimeline').innerHTML = '';
+        document.getElementById('doneCards').innerHTML = '';
+        document.getElementById('progressCards').innerHTML = '';
+        document.getElementById('testingCards').innerHTML = '';
+
+        // Restore backlog cards
+        document.getElementById('backlogCards').innerHTML = `
+            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
+        `;
+        updateCounts();
+        updateScore(0);
+
+        let totalScore = 0;
+
+        try {
+            addLogEntry('—', 'Starting sprint: 3 tasks queued', 0);
+
+            for (const task of ALL_TASKS) {
+                await sleep(400);
+                const taskScore = await runSingleTask(task);
+                totalScore += Math.max(0, taskScore);
+            }
+
+            const avgScore = totalScore / ALL_TASKS.length;
+            updateScore(avgScore);
+            addLogEntry('END', `Sprint complete! Avg score: ${avgScore.toFixed(2)}`, avgScore);
+
+            document.getElementById('envStatus').textContent = 'completed';
+            document.getElementById('envStatus').style.color = 'var(--accent-green)';
+            document.getElementById('statusText').textContent = 'Sprint complete';
+            appendTerminal('\n══ ALL TASKS FINISHED ══');
+
+        } catch (err) {
+            appendTerminal('ERROR: ' + err.message);
+            document.getElementById('envStatus').textContent = 'error';
+            document.getElementById('envStatus').style.color = 'var(--accent-red)';
+        }
+
+        btn.disabled = false;
+        btn.textContent = '▶ Launch Agent';
+        isRunning = false;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+</script>
+
+</body>
+</html>
