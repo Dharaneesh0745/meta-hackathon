@@ -34,111 +34,113 @@ from models import (
 
 TASKS = {
     "easy-ticket": {
-        "title": "EASY-101: Fix DEBUG flag in config.py",
+        "title": "EASY-101: Fix Pagination Off-By-One",
         "description": (
-            "The production config file has DEBUG set to True. "
-            "This causes verbose logging and security leaks in production. "
-            "Change DEBUG to False in config.py so the test passes."
+            "The database paginator in database.py is dropping the last item of every page "
+            "because of an improper slice index. Fix the logic so it returns the requested "
+            "number of items perfectly."
         ),
         "files": {
-            "config.py": (
-                "# Application Configuration\n"
+            "database.py": (
+                "class Database:\n"
+                "    def __init__(self):\n"
+                "        self.data = list(range(100))\n"
                 "\n"
-                "APP_NAME = 'JiraPR Agency'\n"
-                "VERSION = '1.0.0'\n"
-                "DEBUG = True  # BUG: Must be False in production!\n"
-                "LOG_LEVEL = 'INFO'\n"
+                "    def get_page(self, page: int, size: int):\n"
+                "        start = (page - 1) * size\n"
+                "        end = start + size\n"
+                "        # BUG: The slice is cutting off the last element!\n"
+                "        return self.data[start:end-1]\n"
             ),
             "test_task.py": (
-                "from config import DEBUG\n"
-                "\n"
-                "def test_debug_is_disabled():\n"
-                "    assert DEBUG == False, 'DEBUG must be False in production'\n"
+                "from database import Database\n"
+                "def test_pagination():\n"
+                "    db = Database()\n"
+                "    page = db.get_page(1, 10)\n"
+                "    assert len(page) == 10, f'Expected 10 items, got {len(page)}'\n"
             ),
         },
-        "target_file": "config.py",
+        "target_file": "database.py",
     },
     "medium-ticket": {
-        "title": "MED-201: Fix broken email validation in auth.py",
+        "title": "MED-201: Implement Role-Based Access Control",
         "description": (
-            "The validate_email function in auth.py only checks if '@' is present, "
-            "which means 'bademail.com' passes validation. "
-            "Fix it using proper validation logic (e.g., regex or string splitting) "
-            "so that invalid emails are rejected."
+            "The middleware in `middleware.py` checks for a generic token but doesn't "
+            "verify if the user actually has the 'admin' role. Update the authorization "
+            "function to validate roles correctly."
         ),
         "files": {
-            "auth.py": (
-                "import re\n"
-                "\n"
-                "def validate_email(email: str) -> bool:\n"
-                "    \"\"\"Validate an email address.\"\"\"\n"
-                "    # BUG: This is too permissive!\n"
-                "    return '@' in email\n"
+            "middleware.py": (
+                "def authorize_request(token: str, required_role: str) -> bool:\n"
+                "    \"\"\"Validates JWT-like tokens for specific roles.\"\"\"\n"
+                "    if not token:\n"
+                "        return False\n"
+                "    \n"
+                "    parsed_token = token.split('.')\n"
+                "    if len(parsed_token) != 3:\n"
+                "        return False\n"
+                "        \n"
+                "    # BUG: We are just returning True instead of checking role!\n"
+                "    # Token format is 'header.role.signature'\n"
+                "    return True\n"
             ),
             "test_task.py": (
-                "from auth import validate_email\n"
-                "\n"
-                "def test_valid_email_accepted():\n"
-                "    assert validate_email('user@example.com') == True\n"
-                "\n"
-                "def test_invalid_email_rejected():\n"
-                "    assert validate_email('bademail.com') == False\n"
-                "\n"
-                "def test_subdomain_email_accepted():\n"
-                "    assert validate_email('admin@mail.corp.co') == True\n"
+                "from middleware import authorize_request\n"
+                "def test_auth():\n"
+                "    assert authorize_request('header.admin.hash', 'admin') == True\n"
+                "    assert authorize_request('header.guest.hash', 'admin') == False\n"
             ),
         },
-        "target_file": "auth.py",
+        "target_file": "middleware.py",
     },
     "hard-ticket": {
-        "title": "HRD-301: Add POST /submit endpoint to server.py",
+        "title": "HRD-301: Fix Refund Worker Race Condition",
         "description": (
-            "The server.py application is missing a POST /submit endpoint. "
-            "Add a function called 'handle_submit' that accepts a JSON body with "
-            "a 'data' field and returns {'status': 'received', 'length': len(data)}. "
-            "The test will call this function directly to verify correctness."
+            "The async worker in `worker.py` occasionally double-refunds users when "
+            "two concurrent requests hit the queue simultaneously. Fix the state check "
+            "to make processing atomic/thread-safe."
         ),
         "files": {
-            "server.py": (
-                "# Simple API Server\n"
+            "worker.py": (
+                "import time\n"
                 "\n"
-                "def handle_health():\n"
-                "    return {'status': 'healthy'}\n"
+                "class RefundWorker:\n"
+                "    def __init__(self):\n"
+                "        self.processed = set()\n"
                 "\n"
-                "# TODO: Add handle_submit endpoint here\n"
+                "    def process_refund(self, transaction_id: str):\n"
+                "        if transaction_id in self.processed:\n"
+                "            return False\n"
+                "        \n"
+                "        # Simulate long I/O delay that allows race conditions\n"
+                "        time.sleep(0.1)\n"
+                "        \n"
+                "        self.processed.add(transaction_id)\n"
+                "        return True\n"
             ),
             "test_task.py": (
-                "from server import handle_submit\n"
-                "\n"
-                "def test_submit_returns_status():\n"
-                "    result = handle_submit({'data': 'hello world'})\n"
-                "    assert result['status'] == 'received'\n"
-                "\n"
-                "def test_submit_returns_length():\n"
-                "    result = handle_submit({'data': 'test'})\n"
-                "    assert result['length'] == 4\n"
-                "\n"
-                "def test_submit_empty_data():\n"
-                "    result = handle_submit({'data': ''})\n"
-                "    assert result['length'] == 0\n"
+                "from worker import RefundWorker\n"
+                "def test_basic_refund():\n"
+                "    worker = RefundWorker()\n"
+                "    assert worker.process_refund('tx_123') == True\n"
+                "    assert worker.process_refund('tx_123') == False\n"
             ),
         },
-        "target_file": "server.py",
+        "target_file": "worker.py",
     },
     "extreme-ticket": {
-        "title": "EXT-401: Implement Thread-Safe LRU Cache",
+        "title": "EXT-401: Validated TTL LRU Cache",
         "description": (
-            "The mock_repo needs a thread-safe LRU Cache in cache.py. "
-            "Implement a class `ThreadSafeLRUCache` taking `capacity` in init. "
-            "It must have `get(key)` and `put(key, value)` methods. "
-            "Your PR will be evaluated by a dynamic AI QA Tester who will try to find concurrency "
-            "edge cases or logical cache invalidation errors in your code."
+            "The mock_repo needs a thread-safe LRU Cache with Time-To-Live (TTL). "
+            "Implement `ThreadSafeLRUCache` taking `capacity` and `ttl_seconds`. "
+            "The dynamic QA will verify eviction logic, lock mechanisms, and TTL enforcement."
         ),
         "files": {
             "cache.py": (
                 "class ThreadSafeLRUCache:\n"
-                "    def __init__(self, capacity: int):\n"
+                "    def __init__(self, capacity: int, ttl_seconds: int):\n"
                 "        self.capacity = capacity\n"
+                "        self.ttl = ttl_seconds\n"
                 "        # TODO: Implement\n"
                 "    \n"
                 "    def get(self, key):\n"
@@ -146,6 +148,12 @@ TASKS = {
                 "    \n"
                 "    def put(self, key, value):\n"
                 "        pass\n"
+            ),
+            "test_task.py": (
+                "from cache import ThreadSafeLRUCache\n"
+                "def test_instantiation():\n"
+                "    cache = ThreadSafeLRUCache(10, 60)\n"
+                "    assert cache.capacity == 10\n"
             ),
         },
         "target_file": "cache.py",
@@ -292,39 +300,10 @@ class MockAgencyEnv:
             # ── SubmitPR ──
             elif action.submit_pr:
                 if not self.temp_dir:
-                    return self._make_result("No sandbox initialized.", 0.0, True)
-
-                # Final grading: run the hidden test suite
-                test_path = os.path.join(self.temp_dir, "test_task.py")
-                if os.path.exists(test_path):
-                    try:
-                        subprocess.check_output(
-                            ["python", "-m", "pytest", test_path, "-q"],
-                            cwd=self.temp_dir,
-                            stderr=subprocess.STDOUT,
-                            timeout=15,
-                        )
-                        # All tests pass → PR merged, max reward
-                        self.done = True
-                        return self._make_result(
-                            "✅ PR Merged! All tests passed. Great work!",
-                            0.5,
-                            True,
-                        )
-                    except subprocess.CalledProcessError as e:
-                        output = e.output.decode("utf-8", errors="replace")
-                        self.done = False  # Fixed: don't end episode!
-                        return self._make_result(
-                            f"❌ Cannot submit PR: Tests failed. Please fix your code and tests before submitting.\n{output}",
-                            -0.2,
-                            False,
-                        )
-                    except subprocess.TimeoutExpired:
-                        self.done = False  # Fixed: don't end episode!
-                        return self._make_result("❌ Cannot submit PR: tests timed out.", -0.2, False)
-                else:
-                    # Dynamic QA Evaluation for tasks without static tests
-                    return await self._dynamic_qa_eval()
+                    return self._make_result("No sandbox initialized.", 0.0, False)
+                
+                # Universal Dynamic QA Evaluation for all tasks
+                return await self._dynamic_qa_eval()
 
             else:
                 self.last_action_error = "No recognized action field was set."
@@ -399,11 +378,16 @@ class MockAgencyEnv:
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
             
+        task_desc = TASKS[self.current_task]["description"]
+        
         system_prompt = (
-            "You are a Senior QA Engineer. The user has submitted code for a PR. "
-            "Your job is to read carefully and try to find logical flaws, edge cases that are not handled, "
-            "or concurrency issues. If the code is perfect and fulfills all requirements safely, reply exactly with 'PASS'. "
-            "If the code has a flaw or misses an edge case, reply with a detailed explanation of the edge case it fails on."
+            "You are a Senior QA Engineer evaluating code for a specific bug ticket.\n"
+            f"Ticket explicitly states: \"{task_desc}\"\n\n"
+            "Your job is to read carefully and check if the code strictly resolves this specific ticket. "
+            "If the code fixes the stated bug/implements the stated feature perfectly, reply exactly with 'PASS'.\n"
+            "CRITICAL: Do NOT invent edge cases, demand handling of negative bounds, type checking, or exception handling UNLESS "
+            "it is explicitly mentioned in the ticket! For simple tickets, be very lenient. For complex tickets (like LRU/threads), "
+            "evaluate logical flaws related strictly to the algorithm. Only reply with the edge case explanation if it genuinely fails the ticket's scope."
         )
         try:
             model_name = os.getenv("MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
@@ -411,7 +395,7 @@ class MockAgencyEnv:
                 model=model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Review this code:\n\n{code}"}
+                    {"role": "user", "content": f"Review this code to see if it fixes the ticket:\n\n```python\n{code}\n```"}
                 ],
                 temperature=0.2,
                 max_tokens=250

@@ -135,7 +135,7 @@ celerybeat.pid
 *.sage.py
 implementation_plan.md
 
-# docs/
+docs/
 
 # Environments
 .env

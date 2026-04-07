@@ -451,17 +451,17 @@
             <div class="task-list" id="taskList">
                 <div class="task-item easy active" data-task="easy-ticket" onclick="selectTask(this)">
                     <div class="task-id">EASY-101</div>
-                    <div class="task-title">Fix DEBUG flag in config.py</div>
+                    <div class="task-title">Fix Pagination Off-By-One</div>
                     <span class="diff-badge easy">Easy</span>
                 </div>
                 <div class="task-item medium" data-task="medium-ticket" onclick="selectTask(this)">
                     <div class="task-id">MED-201</div>
-                    <div class="task-title">Fix email validation regex</div>
+                    <div class="task-title">Implement Role-Based Access</div>
                     <span class="diff-badge medium">Medium</span>
                 </div>
                 <div class="task-item hard" data-task="hard-ticket" onclick="selectTask(this)">
                     <div class="task-id">HRD-301</div>
-                    <div class="task-title">Add POST /submit endpoint</div>
+                    <div class="task-title">Fix Refund Race Condition</div>
                     <span class="diff-badge hard">Hard</span>
                 </div>
                 <div class="task-item extreme" data-task="extreme-ticket" onclick="selectTask(this)">
@@ -505,10 +505,10 @@
                     <div class="kanban-col">
                         <div class="kanban-col-header">📥 Backlog <span class="kanban-col-count" id="backlogCount">4</span></div>
                         <div id="backlogCards">
-                            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
-                            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
-                            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
-                            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU Cache</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix Pagination</div><div class="kanban-card-meta"><span>database.py</span><span class="diff-badge easy">Easy</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Add RBAC</div><div class="kanban-card-meta"><span>middleware.py</span><span class="diff-badge medium">Medium</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Fix Worker Race</div><div class="kanban-card-meta"><span>worker.py</span><span class="diff-badge hard">Hard</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU+TTL</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
                         </div>
                     </div>
                     <div class="kanban-col">
@@ -665,64 +665,75 @@
     // ── AGENT SIMULATION ────────────────
     // Task metadata
     const ALL_TASKS = [
-        {taskId:'easy-ticket', id:'EASY-101', title:'Fix DEBUG flag', file:'config.py', diff:'easy'},
-        {taskId:'medium-ticket', id:'MED-201', title:'Fix email validation', file:'auth.py', diff:'medium'},
-        {taskId:'hard-ticket', id:'HRD-301', title:'Add POST /submit', file:'server.py', diff:'hard'},
-        {taskId:'extreme-ticket', id:'EXT-401', title:'Implement LRU Cache', file:'cache.py', diff:'extreme'}
+        {taskId:'easy-ticket', id:'EASY-101', title:'Fix Pagination', file:'database.py', diff:'easy'},
+        {taskId:'medium-ticket', id:'MED-201', title:'Add RBAC', file:'middleware.py', diff:'medium'},
+        {taskId:'hard-ticket', id:'HRD-301', title:'Fix Worker Race', file:'worker.py', diff:'hard'},
+        {taskId:'extreme-ticket', id:'EXT-401', title:'Implement LRU+TTL', file:'cache.py', diff:'extreme'}
     ];
 
-    // Code fixes + diffs per task
     const FIXES = {
         'easy-ticket': {
-            file: 'config.py',
-            content: "# Application Configuration\n\nAPP_NAME = 'JiraPR Agency'\nVERSION = '1.0.0'\nDEBUG = False  # Fixed: disabled in production\nLOG_LEVEL = 'INFO'\n",
+            file: 'database.py',
+            content: "class Database:\n    def __init__(self):\n        self.data = list(range(100))\n\n    def get_page(self, page: int, size: int):\n        start = (page - 1) * size\n        end = start + size\n        return self.data[start:end]\n",
             diff: [
-                {type:'norm', text:"# Application Configuration"},
+                {type:'norm', text:"class Database:"},
+                {type:'norm', text:"    def __init__(self):"},
+                {type:'norm', text:"        self.data = list(range(100))"},
                 {type:'norm', text:""},
-                {type:'norm', text:"APP_NAME = 'JiraPR Agency'"},
-                {type:'norm', text:"VERSION = '1.0.0'"},
-                {type:'del',  text:"DEBUG = True  # BUG: Must be False in production!"},
-                {type:'add',  text:"DEBUG = False  # Fixed: disabled in production"},
-                {type:'norm', text:"LOG_LEVEL = 'INFO'"},
+                {type:'norm', text:"    def get_page(self, page: int, size: int):"},
+                {type:'norm', text:"        start = (page - 1) * size"},
+                {type:'norm', text:"        end = start + size"},
+                {type:'del',  text:"        # BUG: The slice is cutting off the last element!"},
+                {type:'del',  text:"        return self.data[start:end-1]"},
+                {type:'add',  text:"        return self.data[start:end]"},
             ]
         },
         'medium-ticket': {
-            file: 'auth.py',
-            content: "import re\n\ndef validate_email(email: str) -> bool:\n    \"\"\"Validate an email address.\"\"\"\n    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'\n    return bool(re.match(pattern, email))\n",
+            file: 'middleware.py',
+            content: "def authorize_request(token: str, required_role: str) -> bool:\n    \"\"\"Validates JWT-like tokens for specific roles.\"\"\"\n    if not token:\n        return False\n    \n    parsed_token = token.split('.')\n    if len(parsed_token) != 3:\n        return False\n        \n    user_role = parsed_token[1]\n    return user_role == required_role\n",
             diff: [
-                {type:'norm', text:"import re"},
-                {type:'norm', text:""},
-                {type:'norm', text:"def validate_email(email: str) -> bool:"},
-                {type:'norm', text:'    """Validate an email address."""'},
-                {type:'del',  text:"    return '@' in email"},
-                {type:'add',  text:"    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'"},
-                {type:'add',  text:"    return bool(re.match(pattern, email))"},
+                {type:'norm', text:"    if len(parsed_token) != 3:"},
+                {type:'norm', text:"        return False"},
+                {type:'norm', text:"        "},
+                {type:'del',  text:"    # BUG: We are just returning True instead of checking role!"},
+                {type:'del',  text:"    # Token format is 'header.role.signature'"},
+                {type:'del',  text:"    return True"},
+                {type:'add',  text:"    user_role = parsed_token[1]"},
+                {type:'add',  text:"    return user_role == required_role"},
             ]
         },
         'hard-ticket': {
-            file: 'server.py',
-            content: "# Simple API Server\n\ndef handle_health():\n    return {'status': 'healthy'}\n\ndef handle_submit(body: dict) -> dict:\n    data = body.get('data', '')\n    return {'status': 'received', 'length': len(data)}\n",
+            file: 'worker.py',
+            content: "import time\nimport threading\n\nclass RefundWorker:\n    def __init__(self):\n        self.processed = set()\n        self.lock = threading.Lock()\n\n    def process_refund(self, transaction_id: str):\n        with self.lock:\n            if transaction_id in self.processed:\n                return False\n            \n            # Simulate long I/O delay\n            time.sleep(0.1)\n            \n            self.processed.add(transaction_id)\n            return True\n",
             diff: [
-                {type:'norm', text:"# Simple API Server"},
+                {type:'add',  text:"import threading"},
                 {type:'norm', text:""},
-                {type:'norm', text:"def handle_health():"},
-                {type:'norm', text:"    return {'status': 'healthy'}"},
+                {type:'norm', text:"class RefundWorker:"},
+                {type:'del',  text:"    def __init__(self):"},
+                {type:'del',  text:"        self.processed = set()"},
+                {type:'add',  text:"    def __init__(self):"},
+                {type:'add',  text:"        self.processed = set()"},
+                {type:'add',  text:"        self.lock = threading.Lock()"},
                 {type:'norm', text:""},
-                {type:'del',  text:"# TODO: Add handle_submit endpoint here"},
-                {type:'add',  text:"def handle_submit(body: dict) -> dict:"},
-                {type:'add',  text:"    data = body.get('data', '')"},
-                {type:'add',  text:"    return {'status': 'received', 'length': len(data)}"},
+                {type:'del',  text:"    def process_refund(self, transaction_id: str):"},
+                {type:'del',  text:"        if transaction_id in self.processed:"},
+                {type:'add',  text:"    def process_refund(self, transaction_id: str):"},
+                {type:'add',  text:"        with self.lock:"},
+                {type:'add',  text:"            if transaction_id in self.processed:"},
+                {type:'norm', text:"                return False"},
             ]
         },
         'extreme-ticket': {
             file: 'cache.py',
-            content: "import threading\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = {}\n        self.lock = threading.Lock()\n        # Logic fixed via PR testing loop\n",
+            content: "import threading\nimport time\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = {}\n        self.lock = threading.Lock()\n        # Logic fixed via PR testing loop\n",
             diff: [
                 {type:'add', text:"import threading"},
+                {type:'add', text:"import time"},
                 {type:'norm', text:""},
                 {type:'norm', text:"class ThreadSafeLRUCache:"},
-                {type:'norm', text:"    def __init__(self, capacity: int):"},
+                {type:'norm', text:"    def __init__(self, capacity: int, ttl_seconds: int):"},
                 {type:'norm', text:"        self.capacity = capacity"},
+                {type:'norm', text:"        self.ttl = ttl_seconds"},
                 {type:'del',  text:"        # TODO: Implement"},
                 {type:'add',  text:"        self.cache = {}"},
                 {type:'add',  text:"        self.lock = threading.Lock()"},
@@ -827,7 +838,7 @@
         let isMerged = false;
         let prData;
         let attempts = 0;
-        const MAX_ATTEMPTS = 2;
+        const MAX_ATTEMPTS = 3;
         
         while (!isMerged && attempts < MAX_ATTEMPTS) {
             attempts++;
@@ -863,17 +874,31 @@
                 
                 if (t.taskId === 'extreme-ticket' && attempts < MAX_ATTEMPTS) {
                     appendTerminal('\n$ edit_file cache.py (Fixing QA Feedback)');
-                    const fixContent = "import threading\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = {}\n        self.lock = threading.Lock()\n    def get(self, key):\n        with self.lock:\n            return self.cache.get(key)\n    def put(self, key, value):\n        with self.lock:\n            self.cache[key] = value\n";
-                    showCode('cache.py', [
-                        {type:'norm', text:"import threading"},
-                        {type:'norm', text:"class ThreadSafeLRUCache:"},
-                        {type:'add',  text:"    def get(self, key):"},
-                        {type:'add',  text:"        with self.lock:"},
-                        {type:'add',  text:"            return self.cache.get(key)"},
-                        {type:'add',  text:"    def put(self, key, value):"},
-                        {type:'add',  text:"        with self.lock:"},
-                        {type:'add',  text:"            self.cache[key] = value"},
-                    ]);
+                    let fixContent, diffArray;
+                    if (attempts === 1) {
+                        fixContent = "import threading\nimport time\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = {}\n        self.lock = threading.Lock()\n    def get(self, key):\n        with self.lock:\n            return self.cache.get(key)\n    def put(self, key, value):\n        with self.lock:\n            self.cache[key] = value\n";
+                        diffArray = [
+                            {type:'norm', text:"import threading"},
+                            {type:'norm', text:"import time"},
+                            {type:'norm', text:"class ThreadSafeLRUCache:"},
+                            {type:'add',  text:"    def get(self, key):"},
+                            {type:'add',  text:"        with self.lock:"},
+                            {type:'add',  text:"            return self.cache.get(key)"},
+                            {type:'add',  text:"    def put(self, key, value):"},
+                            {type:'add',  text:"        with self.lock:"},
+                            {type:'add',  text:"            self.cache[key] = value"},
+                        ];
+                    } else {
+                        fixContent = "import time\nimport threading\nfrom collections import OrderedDict\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = OrderedDict()\n        self.lock = threading.Lock()\n        \n    def get(self, key):\n        with self.lock:\n            if key not in self.cache: return None\n            val, ts = self.cache[key]\n            if time.time() - ts > self.ttl:\n                del self.cache[key]\n                return None\n            self.cache.move_to_end(key)\n            return val\n            \n    def put(self, key, value):\n        with self.lock:\n            if key in self.cache:\n                del self.cache[key]\n            elif len(self.cache) >= self.capacity:\n                self.cache.popitem(last=False)\n            self.cache[key] = (value, time.time())\n";
+                        diffArray = [
+                            {type:'norm', text:"import threading"},
+                            {type:'add', text:"from collections import OrderedDict"},
+                            {type:'norm', text:"class ThreadSafeLRUCache:"},
+                            {type:'add',  text:"    # Fixed: Replaced standard dict with OrderedDict"},
+                            {type:'add',  text:"    # Fixed: Added ttl timestamp logic and LRU eviction policy!"},
+                        ];
+                    }
+                    showCode('cache.py', diffArray);
                     const fixRes = await fetch('/step', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
