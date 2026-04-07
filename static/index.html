@@ -151,6 +151,8 @@
         .diff-badge.easy { background: rgba(63,185,80,0.15); color: var(--accent-green); }
         .diff-badge.medium { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
         .diff-badge.hard { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+        .diff-badge.extreme { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+        .task-item.extreme::before { background: var(--accent-purple); }
 
         /* Launch button */
         .launch-btn {
@@ -462,6 +464,11 @@
                     <div class="task-title">Add POST /submit endpoint</div>
                     <span class="diff-badge hard">Hard</span>
                 </div>
+                <div class="task-item extreme" data-task="extreme-ticket" onclick="selectTask(this)">
+                    <div class="task-id">EXT-401</div>
+                    <div class="task-title">Implement Thread-Safe LRU Cache</div>
+                    <span class="diff-badge extreme">Extreme</span>
+                </div>
             </div>
         </div>
 
@@ -496,11 +503,12 @@
             <div class="tab-panel active" id="tab-kanban">
                 <div class="kanban-board">
                     <div class="kanban-col">
-                        <div class="kanban-col-header">📥 Backlog <span class="kanban-col-count" id="backlogCount">3</span></div>
+                        <div class="kanban-col-header">📥 Backlog <span class="kanban-col-count" id="backlogCount">4</span></div>
                         <div id="backlogCards">
                             <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
                             <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
                             <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU Cache</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
                         </div>
                     </div>
                     <div class="kanban-col">
@@ -659,7 +667,8 @@
     const ALL_TASKS = [
         {taskId:'easy-ticket', id:'EASY-101', title:'Fix DEBUG flag', file:'config.py', diff:'easy'},
         {taskId:'medium-ticket', id:'MED-201', title:'Fix email validation', file:'auth.py', diff:'medium'},
-        {taskId:'hard-ticket', id:'HRD-301', title:'Add POST /submit', file:'server.py', diff:'hard'}
+        {taskId:'hard-ticket', id:'HRD-301', title:'Add POST /submit', file:'server.py', diff:'hard'},
+        {taskId:'extreme-ticket', id:'EXT-401', title:'Implement LRU Cache', file:'cache.py', diff:'extreme'}
     ];
 
     // Code fixes + diffs per task
@@ -704,12 +713,27 @@
                 {type:'add',  text:"    data = body.get('data', '')"},
                 {type:'add',  text:"    return {'status': 'received', 'length': len(data)}"},
             ]
+        },
+        'extreme-ticket': {
+            file: 'cache.py',
+            content: "import threading\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = {}\n        self.lock = threading.Lock()\n        # Logic fixed via PR testing loop\n",
+            diff: [
+                {type:'add', text:"import threading"},
+                {type:'norm', text:""},
+                {type:'norm', text:"class ThreadSafeLRUCache:"},
+                {type:'norm', text:"    def __init__(self, capacity: int):"},
+                {type:'norm', text:"        self.capacity = capacity"},
+                {type:'del',  text:"        # TODO: Implement"},
+                {type:'add',  text:"        self.cache = {}"},
+                {type:'add',  text:"        self.lock = threading.Lock()"},
+                {type:'add',  text:"        # Logic fixed via PR testing loop"},
+            ]
         }
     };
 
     function removeBacklogCard(taskId) {
         const backlog = document.getElementById('backlogCards');
-        const taskIdMap = {'easy-ticket':'EASY-101','medium-ticket':'MED-201','hard-ticket':'HRD-301'};
+        const taskIdMap = {'easy-ticket':'EASY-101','medium-ticket':'MED-201','hard-ticket':'HRD-301', 'extreme-ticket':'EXT-401'};
         const targetId = taskIdMap[taskId];
         Array.from(backlog.children).forEach(card => {
             if (card.querySelector('.kanban-card-id')?.textContent === targetId) {
@@ -800,30 +824,81 @@
 
         await sleep(1000);
 
-        // 5. SUBMIT PR
-        stepNum++;
-        appendTerminal('$ submit_pr ' + t.taskId);
-        const prRes = await fetch('/step', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({submit_pr: {ticket_id: t.taskId, title: 'Fix: ' + t.title}})
-        });
-        const prData = await prRes.json();
-        appendTerminal('> ' + prData.observation.terminal_output);
-        const prMerged = prData.observation.terminal_output.includes('Merged');
-        const prReward = prMerged ? 0.5 : -0.2;
-        totalPRReward += prReward;
-        document.getElementById('prReward').textContent = (totalPRReward / ALL_TASKS.length).toFixed(2);
-        addLogEntry(stepNum, prMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', prReward);
-        document.getElementById('stepCount').textContent = stepNum;
+        let isMerged = false;
+        let prData;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 2;
+        
+        while (!isMerged && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            // 5. SUBMIT PR
+            stepNum++;
+            appendTerminal('$ submit_pr ' + t.taskId);
+            const prRes = await fetch('/step', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({submit_pr: {ticket_id: t.taskId, title: 'Fix: ' + t.title}})
+            });
+            prData = await prRes.json();
+            appendTerminal('> ' + truncate(prData.observation.terminal_output, 400));
+            isMerged = prData.observation.terminal_output.includes('Merged');
+            const prReward = isMerged ? 0.5 : -0.2;
+            totalPRReward += prReward;
+            document.getElementById('prReward').textContent = (totalPRReward / ALL_TASKS.length).toFixed(2);
+            addLogEntry(stepNum, isMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', prReward);
+            document.getElementById('stepCount').textContent = stepNum;
 
-        // Move: Testing → Done
-        document.getElementById('testingCards').innerHTML = '';
-        const resultEmoji = prMerged ? '✅' : '❌';
-        document.getElementById('doneCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ${resultEmoji}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Score: ${prData.reward.toFixed(2)}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
-        updateCounts();
-
-        return prData.reward;
+            if (isMerged) {
+                // Move: Testing → Done
+                document.getElementById('testingCards').innerHTML = '';
+                document.getElementById('doneCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ✅</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Score: ${prData.reward.toFixed(2)}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
+                updateCounts();
+            } else {
+                // Move back to In Progress
+                document.getElementById('testingCards').innerHTML = '';
+                document.getElementById('progressCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ❌</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Fixing feedback...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
+                updateCounts();
+                
+                await sleep(1500);
+                
+                if (t.taskId === 'extreme-ticket' && attempts < MAX_ATTEMPTS) {
+                    appendTerminal('\n$ edit_file cache.py (Fixing QA Feedback)');
+                    const fixContent = "import threading\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int):\n        self.capacity = capacity\n        self.cache = {}\n        self.lock = threading.Lock()\n    def get(self, key):\n        with self.lock:\n            return self.cache.get(key)\n    def put(self, key, value):\n        with self.lock:\n            self.cache[key] = value\n";
+                    showCode('cache.py', [
+                        {type:'norm', text:"import threading"},
+                        {type:'norm', text:"class ThreadSafeLRUCache:"},
+                        {type:'add',  text:"    def get(self, key):"},
+                        {type:'add',  text:"        with self.lock:"},
+                        {type:'add',  text:"            return self.cache.get(key)"},
+                        {type:'add',  text:"    def put(self, key, value):"},
+                        {type:'add',  text:"        with self.lock:"},
+                        {type:'add',  text:"            self.cache[key] = value"},
+                    ]);
+                    const fixRes = await fetch('/step', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({edit_file: {file_path: 'cache.py', new_content: fixContent}})
+                    });
+                    const fixData = await fixRes.json();
+                    appendTerminal('> ' + fixData.observation.terminal_output);
+                    
+                    await sleep(1000);
+                    // Move to testing again
+                    document.getElementById('progressCards').innerHTML = '';
+                    document.getElementById('testingCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id} 🤖</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>QA Retesting...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+                    updateCounts();
+                    await sleep(1000);
+                } else {
+                    break; // stop loop for others if failed
+                }
+            }
+        }
+        
+        if (!isMerged) {
+            appendTerminal('> ERROR: PR still failing after max attempts. Canceling task loop to prevent infinite retry.');
+        }
+        
+        return prData ? prData.reward : 0;
     }
 
     async function runAgent() {
@@ -853,6 +928,7 @@
             <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
             <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
             <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU Cache</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
         `;
         updateCounts();
         updateScore(0);
@@ -860,7 +936,7 @@
         let totalScore = 0;
 
         try {
-            addLogEntry('—', 'Starting sprint: 3 tasks queued', 0);
+            addLogEntry('—', 'Starting sprint: 4 tasks queued', 0);
 
             for (const task of ALL_TASKS) {
                 await sleep(400);

@@ -125,6 +125,31 @@ TASKS = {
         },
         "target_file": "server.py",
     },
+    "extreme-ticket": {
+        "title": "EXT-401: Implement Thread-Safe LRU Cache",
+        "description": (
+            "The mock_repo needs a thread-safe LRU Cache in cache.py. "
+            "Implement a class `ThreadSafeLRUCache` taking `capacity` in init. "
+            "It must have `get(key)` and `put(key, value)` methods. "
+            "Your PR will be evaluated by a dynamic AI QA Tester who will try to find concurrency "
+            "edge cases or logical cache invalidation errors in your code."
+        ),
+        "files": {
+            "cache.py": (
+                "class ThreadSafeLRUCache:\n"
+                "    def __init__(self, capacity: int):\n"
+                "        self.capacity = capacity\n"
+                "        # TODO: Implement\n"
+                "    \n"
+                "    def get(self, key):\n"
+                "        pass\n"
+                "    \n"
+                "    def put(self, key, value):\n"
+                "        pass\n"
+            ),
+        },
+        "target_file": "cache.py",
+    },
 }
 
 
@@ -146,6 +171,7 @@ class MockAgencyEnv:
         self.score: float = 0.0
         self.done: bool = False
         self.last_action_error: Optional[str] = None
+        self.milestones = {"edited": False, "tested": False}
 
     # ── RESET ──────────────────────────────
 
@@ -167,6 +193,7 @@ class MockAgencyEnv:
         self.score = 0.0
         self.done = False
         self.last_action_error = None
+        self.milestones = {"edited": False, "tested": False}
 
         # Create isolated temp directory with task files
         self.temp_dir = tempfile.mkdtemp(prefix="jira_pr_")
@@ -223,9 +250,12 @@ class MockAgencyEnv:
                     f.write(action.edit_file.new_content)
 
                 # Dense reward: agent made progress by editing
+                reward_delta = 0.2 if not self.milestones["edited"] else 0.0
+                self.milestones["edited"] = True
+                
                 return self._make_result(
                     f"Saved {action.edit_file.file_path} ({len(action.edit_file.new_content)} bytes).",
-                    0.2,
+                    reward_delta,
                     False,
                 )
 
@@ -249,7 +279,9 @@ class MockAgencyEnv:
                     )
                     output = out.decode("utf-8", errors="replace")
                     # Tests passed → positive reward
-                    return self._make_result(output, 0.3, False)
+                    reward_delta = 0.3 if not self.milestones["tested"] else 0.0
+                    self.milestones["tested"] = True
+                    return self._make_result(output, reward_delta, False)
                 except subprocess.CalledProcessError as e:
                     output = e.output.decode("utf-8", errors="replace")
                     # Tests failed → small penalty
@@ -264,31 +296,35 @@ class MockAgencyEnv:
 
                 # Final grading: run the hidden test suite
                 test_path = os.path.join(self.temp_dir, "test_task.py")
-                try:
-                    subprocess.check_output(
-                        ["python", "-m", "pytest", test_path, "-q"],
-                        cwd=self.temp_dir,
-                        stderr=subprocess.STDOUT,
-                        timeout=15,
-                    )
-                    # All tests pass → PR merged, max reward
-                    self.done = True
-                    return self._make_result(
-                        "✅ PR Merged! All tests passed. Great work!",
-                        0.5,
-                        True,
-                    )
-                except subprocess.CalledProcessError as e:
-                    output = e.output.decode("utf-8", errors="replace")
-                    self.done = True
-                    return self._make_result(
-                        f"❌ PR Rejected — tests still failing.\n{output}",
-                        -0.2,
-                        True,
-                    )
-                except subprocess.TimeoutExpired:
-                    self.done = True
-                    return self._make_result("PR Rejected — tests timed out.", -0.2, True)
+                if os.path.exists(test_path):
+                    try:
+                        subprocess.check_output(
+                            ["python", "-m", "pytest", test_path, "-q"],
+                            cwd=self.temp_dir,
+                            stderr=subprocess.STDOUT,
+                            timeout=15,
+                        )
+                        # All tests pass → PR merged, max reward
+                        self.done = True
+                        return self._make_result(
+                            "✅ PR Merged! All tests passed. Great work!",
+                            0.5,
+                            True,
+                        )
+                    except subprocess.CalledProcessError as e:
+                        output = e.output.decode("utf-8", errors="replace")
+                        self.done = False  # Fixed: don't end episode!
+                        return self._make_result(
+                            f"❌ Cannot submit PR: Tests failed. Please fix your code and tests before submitting.\n{output}",
+                            -0.2,
+                            False,
+                        )
+                    except subprocess.TimeoutExpired:
+                        self.done = False  # Fixed: don't end episode!
+                        return self._make_result("❌ Cannot submit PR: tests timed out.", -0.2, False)
+                else:
+                    # Dynamic QA Evaluation for tasks without static tests
+                    return await self._dynamic_qa_eval()
 
             else:
                 self.last_action_error = "No recognized action field was set."
@@ -337,6 +373,59 @@ class MockAgencyEnv:
             done=done,
         )
         return StepResult(observation=obs, reward=self.score, done=done, info={})
+
+    async def _dynamic_qa_eval(self) -> StepResult:
+        from openai import AsyncOpenAI
+        import os
+        from dotenv import load_dotenv
+        
+        load_dotenv() # Load variables from .env if present
+
+        hf_token = os.getenv("HF_TOKEN")
+        if not hf_token:
+            return self._make_result("QA Agent Error: HF_TOKEN is not set.", 0.0, False)
+            
+        client = AsyncOpenAI(
+            api_key=hf_token,
+            base_url=os.getenv("API_BASE_URL", "https://router.huggingface.co/hf-inference/v1")
+        )
+        
+        target_file_name = TASKS[self.current_task]["target_file"]
+        file_path = os.path.join(self.temp_dir, target_file_name)
+        
+        if not os.path.exists(file_path):
+            return self._make_result(f"❌ PR Rejected: {target_file_name} not found.", -0.2, False)
+            
+        with open(file_path, "r", encoding="utf-8") as f:
+            code = f.read()
+            
+        system_prompt = (
+            "You are a Senior QA Engineer. The user has submitted code for a PR. "
+            "Your job is to read carefully and try to find logical flaws, edge cases that are not handled, "
+            "or concurrency issues. If the code is perfect and fulfills all requirements safely, reply exactly with 'PASS'. "
+            "If the code has a flaw or misses an edge case, reply with a detailed explanation of the edge case it fails on."
+        )
+        try:
+            model_name = os.getenv("MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
+            resp = await client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Review this code:\n\n{code}"}
+                ],
+                temperature=0.2,
+                max_tokens=250
+            )
+            feedback = resp.choices[0].message.content.strip()
+            if feedback == "PASS":
+                self.done = True
+                return self._make_result("✅ PR Merged! The Dynamic QA Agent found no flaws.", 0.5, True)
+            else:
+                self.done = False
+                return self._make_result(f"❌ Cannot submit PR: QA review found edge cases:\n\n{feedback}", -0.2, False)
+        except Exception as e:
+            self.done = False
+            return self._make_result(f"QA Agent Error: {e}", 0.0, False)
 
     @classmethod
     async def from_docker_image(cls, image_name: str):
