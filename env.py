@@ -185,7 +185,12 @@ class MockAgencyEnv:
     def tasks(self):
         """Official task registry for the OpenEnv validator."""
         return [
-            {"id": tid, "name": t["title"], "description": t["description"]}
+            {
+                "id": tid, 
+                "name": t["title"], 
+                "description": t["description"],
+                "has_grader": True
+            }
             for tid, t in TASKS.items()
         ]
 
