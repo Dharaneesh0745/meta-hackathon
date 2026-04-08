@@ -403,7 +403,9 @@ class MockAgencyEnv:
             feedback = resp.choices[0].message.content.strip()
             if feedback == "PASS":
                 self.done = True
-                return self._make_result("✅ PR Merged! The Dynamic QA Agent found no flaws.", 0.5, True)
+                # Reward is exactly what's needed to reach 1.0 (completion reward)
+                reward_to_max = max(0.0, 1.0 - self.score)
+                return self._make_result("✅ PR Merged! The Dynamic QA Agent found no flaws.", reward_to_max, True)
             else:
                 self.done = False
                 return self._make_result(f"❌ Cannot submit PR: QA review found edge cases:\n\n{feedback}", -0.2, False)

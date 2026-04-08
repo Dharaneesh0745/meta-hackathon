@@ -414,12 +414,157 @@
         .log-reward.negative { color: var(--accent-red); }
         .log-reward.neutral { color: var(--text-muted); }
 
+        /* ── LOGS TAB ──────────────────────── */
+        .logs-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+            height: 100%;
+            overflow: hidden;
+        }
+        .log-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .log-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-tertiary);
+        }
+        .log-panel-header .dot { width:8px;height:8px;border-radius:50%; }
+        .dot-step { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+        .dot-state { background: var(--accent-purple); box-shadow: 0 0 6px var(--accent-purple); }
+        .log-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.7;
+        }
+        .log-line {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(48,54,61,0.5);
+            animation: slideIn 0.25s ease;
+            word-break: break-all;
+        }
+        .log-line:last-child { border-bottom: none; }
+        .tag-start  { color: var(--accent-green); font-weight:700; }
+        .tag-step   { color: var(--accent-blue); font-weight:700; }
+        .tag-end    { color: var(--accent-purple); font-weight:700; }
+        .tag-state  { color: var(--accent-yellow); font-weight:700; }
+        .kv-key    { color: var(--text-secondary); }
+        .kv-val    { color: var(--text-primary); }
+        .kv-num    { color: var(--accent-green); }
+        .kv-bool-t { color: var(--accent-green); }
+        .kv-bool-f { color: var(--accent-red); }
+        .logs-empty { color:var(--text-muted); font-style:italic; padding:8px 0; }
+
         /* ── RESPONSIVE ──────────────────── */
         @media (max-width: 1024px) {
             .sidebar { width: 220px; min-width: 220px; }
             .kanban-board { grid-template-columns: repeat(2, 1fr); }
             .editor-layout { grid-template-columns: 1fr; }
+            .logs-layout { grid-template-columns: 1fr; }
         }
+
+        /* ── SUMMARY TABLE & MODAL ───────── */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .summary-table th {
+            background: var(--bg-tertiary);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+        .summary-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .summary-table tr:last-child td { border-bottom: none; }
+        .summary-table tr:hover td { background: rgba(88, 166, 255, 0.05); }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--accent-blue); }
+        .modal-close {
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 1.5rem; cursor: pointer; transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--accent-red); }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .event-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 80px;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .event-row:last-child { border-bottom: none; }
+        .event-step { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
+        .event-desc { font-size: 0.9rem; }
+        .event-delta { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @media (max-width: 768px) {
             .app-body { flex-direction: column; }
             .sidebar { width: 100%; min-width: unset; flex-direction: row; flex-wrap: wrap; }
@@ -496,6 +641,8 @@
             <button class="tab-btn active" onclick="switchTab('kanban', this)">📋 Kanban Board</button>
             <button class="tab-btn" onclick="switchTab('editor', this)">💻 Code Editor</button>
             <button class="tab-btn" onclick="switchTab('rewards', this)">📊 Rewards</button>
+            <button class="tab-btn" onclick="switchTab('logs', this)">🔍 Live Logs</button>
+            <button class="tab-btn" onclick="switchTab('summary', this)">📑 Detailed Summary</button>
         </div>
         <div class="tab-panels">
 
@@ -576,8 +723,75 @@
                 </div>
             </div>
 
+            <!-- LIVE LOGS -->
+            <div class="tab-panel" id="tab-logs">
+                <div class="logs-layout">
+                    <!-- LEFT: Step Logs -->
+                    <div class="log-panel">
+                        <div class="log-panel-header">
+                            <span class="dot dot-step"></span>
+                            Step Logs — [START] / [STEP] / [END]
+                        </div>
+                        <div class="log-panel-body" id="stepLogPanel">
+                            <div class="logs-empty">Logs appear here when the agent runs...</div>
+                        </div>
+                    </div>
+                    <!-- RIGHT: State Snapshots -->
+                    <div class="log-panel">
+                        <div class="log-panel-header">
+                            <span class="dot dot-state"></span>
+                            State Snapshots — GET /state after each step
+                        </div>
+                        <div class="log-panel-body" id="stateLogPanel">
+                            <div class="logs-empty">State snapshots appear here when the agent runs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="tab-panel" id="tab-summary">
+                <div style="padding: 24px;">
+                    <h2 style="font-size: 1.25rem; margin-bottom: 8px;">Sprint Performance Summary</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 24px;">Click any row to see the step-by-step reward breakdown and penalty logic.</p>
+                    
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Status</th>
+                                <th>Edit</th>
+                                <th>Test</th>
+                                <th>PR</th>
+                                <th>Final Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                    Sprint not started. Launch the agent to generate a summary.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
+</div>
+
+<!-- ── MODAL ─────────────────────────────── -->
+<div class="modal-overlay" id="rewardModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTaskTitle">Ticket Details</h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" id="modalTaskBody">
+            <!-- Populated via JS -->
+        </div>
+    </div>
 </div>
 
 <script>
@@ -596,6 +810,143 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         btn.classList.add('active');
     }
+
+    // ── LIVE LOG HELPERS ────────────────
+    let stepLogCount = 0;
+    let stateLogCount = 0;
+
+    function appendStepLog(tag, parts) {
+        const panel = document.getElementById('stepLogPanel');
+        if (stepLogCount === 0) panel.innerHTML = '';
+        stepLogCount++;
+        const tagClass = tag === '[START]' ? 'tag-start' : tag === '[END]' ? 'tag-end' : 'tag-step';
+        let html = `<span class="${tagClass}">${tag}</span> `;
+        parts.forEach(([k, v]) => {
+            let vClass = 'kv-val';
+            if (!isNaN(parseFloat(v)) && v !== '') vClass = 'kv-num';
+            else if (v === 'true') vClass = 'kv-bool-t';
+            else if (v === 'false') vClass = 'kv-bool-f';
+            html += `<span class="kv-key">${k}=</span><span class="${vClass}">${v}</span> `;
+        });
+        const div = document.createElement('div');
+        div.className = 'log-line';
+        div.innerHTML = html;
+        panel.appendChild(div);
+        panel.scrollTop = panel.scrollHeight;
+    }
+
+    function appendStateLog(stepLabel, stateObj) {
+        const panel = document.getElementById('stateLogPanel');
+        if (stateLogCount === 0) panel.innerHTML = '';
+        stateLogCount++;
+        const header = document.createElement('div');
+        header.className = 'log-line';
+        header.innerHTML = `<span class="tag-state">◆ STATE</span> <span class="kv-key">after=</span><span class="kv-val">${stepLabel}</span>`;
+        panel.appendChild(header);
+        Object.entries(stateObj).forEach(([k, v]) => {
+            const row = document.createElement('div');
+            row.className = 'log-line';
+            let vStr = JSON.stringify(v);
+            let vClass = 'kv-val';
+            if (typeof v === 'number') vClass = 'kv-num';
+            else if (v === true) { vClass = 'kv-bool-t'; vStr = 'true'; }
+            else if (v === false) { vClass = 'kv-bool-f'; vStr = 'false'; }
+            else if (Array.isArray(v)) vStr = v.join(', ') || '[]';
+            row.innerHTML = `  <span class="kv-key">${k}:</span> <span class="${vClass}">${vStr}</span>`;
+            panel.appendChild(row);
+        });
+        const sep = document.createElement('div');
+        sep.style.cssText = 'color:var(--border);padding:2px 0;';
+        sep.textContent = '─'.repeat(30);
+        panel.appendChild(sep);
+        panel.scrollTop = panel.scrollHeight;
+    }
+
+    async function fetchAndLogState(stepLabel) {
+        try {
+            const res = await fetch('/state');
+            const state = await res.json();
+            appendStateLog(stepLabel, state);
+        } catch(e) {
+            appendStateLog(stepLabel, { error: e.message });
+        }
+    }
+
+    // ── SUMMARY & MODAL LOGIC ───────────
+    let sprintHistory = {}; // Stores {taskId: {status, score, events: [{step, desc, delta}]}}
+
+    function logTaskEvent(taskId, step, desc, delta) {
+        if (!sprintHistory[taskId]) {
+            sprintHistory[taskId] = { status: 'Pending', score: 0, events: [] };
+        }
+        sprintHistory[taskId].events.push({ step, desc, delta });
+    }
+
+    function renderSummaryTable() {
+        const body = document.getElementById('summaryTableBody');
+        if (!body) return;
+        body.innerHTML = '';
+        
+        ALL_TASKS.forEach(t => {
+            const h = sprintHistory[t.taskId] || { status: 'Pending', score: 0, events: [] };
+            
+            // Calculate breakdown for table
+            const editVal = h.events.filter(e => e.desc.includes('Edit')).reduce((acc, e) => acc + e.delta, 0);
+            const testVal = h.events.filter(e => e.desc.includes('Test')).reduce((acc, e) => acc + e.delta, 0);
+            const prVal = h.events.filter(e => e.desc.includes('PR')).reduce((acc, e) => acc + e.delta, 0);
+
+            const row = document.createElement('tr');
+            row.onclick = () => showTaskDetails(t.taskId);
+            row.innerHTML = `
+                <td><div style="font-weight:700;">${t.id}</div><div style="font-size:0.7rem; color:var(--text-secondary);">${t.file}</div></td>
+                <td><span class="diff-badge" style="background:${h.status==='Success'?'var(--accent-green)':'var(--bg-tertiary)'}; color:${h.status==='Success'?'white':'var(--text-secondary)'}">
+                    ${h.status}</span></td>
+                <td style="color:var(--accent-blue);">${editVal.toFixed(2)}</td>
+                <td style="color:var(--accent-green);">${testVal.toFixed(2)}</td>
+                <td style="color:${prVal < 0 ? 'var(--accent-red)' : 'var(--accent-purple)'};">${prVal.toFixed(2)}</td>
+                <td style="font-weight:800; color:var(--text-primary); text-align:right;">${h.score.toFixed(3)}</td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    function showTaskDetails(taskId) {
+        const h = sprintHistory[taskId];
+        if (!h) return;
+        
+        const task = ALL_TASKS.find(t => t.taskId === taskId);
+        document.getElementById('modalTaskTitle').textContent = `${task.id}: ${task.title}`;
+        
+        let html = '';
+        h.events.forEach(e => {
+            const color = e.delta > 0 ? 'var(--accent-green)' : e.delta < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
+            const prefix = e.delta > 0 ? '+' : '';
+            html += `
+                <div class="event-row">
+                    <div class="event-step">Step ${e.step}</div>
+                    <div class="event-desc">${e.desc}</div>
+                    <div class="event-delta" style="color:${color}">${prefix}${e.delta.toFixed(2)}</div>
+                </div>
+            `;
+        });
+        
+        html += `
+            <div style="margin-top:24px; padding:16px; background:var(--bg-tertiary); border-radius:var(--radius-sm); border-left:4px solid var(--accent-blue);">
+                <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Final Accuracy Score</div>
+                <div style="font-size:1.5rem; font-weight:900;">${h.score.toFixed(3)} / 1.000</div>
+            </div>
+        `;
+        
+        document.getElementById('modalTaskBody').innerHTML = html;
+        document.getElementById('rewardModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('rewardModal').style.display = 'none';
+    }
+
+    window.onclick = (e) => { if(e.target === document.getElementById('rewardModal')) closeModal(); }
+    window.onkeydown = (e) => { if(e.key === 'Escape') closeModal(); }
 
     // ── TASK SELECTION ──────────────────
     function selectTask(el) {
@@ -761,6 +1112,9 @@
         document.querySelectorAll('.task-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`.task-item[data-task="${t.taskId}"]`)?.classList.add('active');
 
+        let taskStep = 0;
+        let lastReward = 0;
+
         // 1. RESET
         appendTerminal('\n── Task: ' + t.id + ' ──────────────────');
         appendTerminal('$ Resetting environment for task: ' + t.taskId);
@@ -771,6 +1125,12 @@
         });
         const resetData = await resetRes.json();
         appendTerminal('> ' + resetData.observation.terminal_output);
+        taskStep = 1;
+        lastReward = resetData.observation.reward;
+        appendStepLog('[START]', [['task', t.taskId], ['env', 'jira-to-pr'], ['model', 'ui-agent']]);
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'reset'], ['reward', resetData.observation.reward.toFixed(2)], ['done', resetData.observation.done]]);
+        fetchAndLogState('reset');
+        logTaskEvent(t.taskId, taskStep, 'Environment Reset', 0);
 
         // Move card: Backlog → In Progress
         removeBacklogCard(t.taskId);
@@ -791,6 +1151,12 @@
         appendTerminal('> ' + truncate(readData.observation.terminal_output, 200));
         addLogEntry(stepNum, 'Read ticket: ' + t.id, 0);
         document.getElementById('stepCount').textContent = stepNum;
+        taskStep++;
+        const readDelta = readData.observation.reward - lastReward;
+        lastReward = readData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'read_ticket'], ['reward', readData.observation.reward.toFixed(2)], ['done', readData.observation.done]]);
+        fetchAndLogState('read_ticket');
+        logTaskEvent(t.taskId, taskStep, 'Read Ticket: ' + t.id, readDelta);
 
         await sleep(800);
 
@@ -809,6 +1175,12 @@
         document.getElementById('editReward').textContent = (totalEditReward / ALL_TASKS.length).toFixed(2);
         addLogEntry(stepNum, 'Edited ' + fix.file, 0.2);
         document.getElementById('stepCount').textContent = stepNum;
+        taskStep++;
+        const editDelta = editData.observation.reward - lastReward;
+        lastReward = editData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'edit_file:'+fix.file], ['reward', editData.observation.reward.toFixed(2)], ['done', editData.observation.done]]);
+        fetchAndLogState('edit_file');
+        logTaskEvent(t.taskId, taskStep, 'Code Edit: ' + fix.file, editDelta);
 
         await sleep(1000);
 
@@ -830,8 +1202,14 @@
         const testReward = testPassed ? 0.3 : -0.1;
         totalTestReward += testReward;
         document.getElementById('testReward').textContent = (totalTestReward / ALL_TASKS.length).toFixed(2);
+        taskStep++;
+        const testDelta = testData.observation.reward - lastReward;
+        lastReward = testData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'run_tests'], ['reward', testData.observation.reward.toFixed(2)], ['done', testData.observation.done]]);
+        fetchAndLogState('run_tests');
         addLogEntry(stepNum, testPassed ? 'Tests PASSED' : 'Tests FAILED', testReward);
         document.getElementById('stepCount').textContent = stepNum;
+        logTaskEvent(t.taskId, taskStep, 'Run Tests: ' + (testPassed ? 'PASS' : 'FAIL'), testDelta);
 
         await sleep(1000);
 
@@ -853,11 +1231,21 @@
             prData = await prRes.json();
             appendTerminal('> ' + truncate(prData.observation.terminal_output, 400));
             isMerged = prData.observation.terminal_output.includes('Merged');
-            const prReward = isMerged ? 0.5 : -0.2;
-            totalPRReward += prReward;
+            
+            // For the summary cards, we count a merge as the full 0.5 completion credit
+            const cardReward = isMerged ? 0.5 : 0.0; 
+            if (isMerged) totalPRReward += 0.5; 
+            
             document.getElementById('prReward').textContent = (totalPRReward / ALL_TASKS.length).toFixed(2);
-            addLogEntry(stepNum, isMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', prReward);
+            addLogEntry(stepNum, isMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', isMerged ? 0.5 : -0.2);
             document.getElementById('stepCount').textContent = stepNum;
+
+            taskStep++;
+            const prDelta = prData.observation.reward - lastReward;
+            lastReward = prData.observation.reward;
+            appendStepLog('[STEP]', [['step', taskStep], ['action', 'submit_pr'], ['reward', prData.observation.reward.toFixed(2)], ['done', prData.observation.done]]);
+            fetchAndLogState('submit_pr');
+            logTaskEvent(t.taskId, taskStep, isMerged ? 'PR Merged ✅' : 'PR Rejected ❌', prDelta);
 
             if (isMerged) {
                 // Move: Testing → Done
@@ -907,6 +1295,13 @@
                     const fixData = await fixRes.json();
                     appendTerminal('> ' + fixData.observation.terminal_output);
                     
+                    taskStep++;
+                    const fixDelta = fixData.observation.reward - lastReward;
+                    lastReward = fixData.observation.reward;
+                    appendStepLog('[STEP]', [['step', taskStep], ['action', 'edit_file:cache.py (retry)'], ['reward', fixData.observation.reward.toFixed(2)], ['done', fixData.observation.done]]);
+                    fetchAndLogState('edit_file_retry');
+                    logTaskEvent(t.taskId, taskStep, 'Code Edit (Retry)', fixDelta);
+                    
                     await sleep(1000);
                     // Move to testing again
                     document.getElementById('progressCards').innerHTML = '';
@@ -921,9 +1316,18 @@
         
         if (!isMerged) {
             appendTerminal('> ERROR: PR still failing after max attempts. Canceling task loop to prevent infinite retry.');
+            sprintHistory[t.taskId].status = 'Failed';
+        } else {
+            sprintHistory[t.taskId].status = 'Success';
         }
+
+        const finalScore = prData ? prData.reward : 0;
+        sprintHistory[t.taskId].score = finalScore;
+        renderSummaryTable();
+
+        appendStepLog('[END]', [['success', isMerged], ['steps', taskStep], ['score', finalScore.toFixed(3)], ['rewards', 'denormalized']]);
         
-        return prData ? prData.reward : 0;
+        return finalScore;
     }
 
     async function runAgent() {
@@ -947,13 +1351,18 @@
         document.getElementById('doneCards').innerHTML = '';
         document.getElementById('progressCards').innerHTML = '';
         document.getElementById('testingCards').innerHTML = '';
+        document.getElementById('stepLogPanel').innerHTML = '<div class="logs-empty">Logs appear here when the agent runs...</div>';
+        document.getElementById('stateLogPanel').innerHTML = '<div class="logs-empty">State snapshots appear here when the agent runs...</div>';
+        stepLogCount = 0; stateLogCount = 0;
+        sprintHistory = {};
+        renderSummaryTable();
 
         // Restore backlog cards
         document.getElementById('backlogCards').innerHTML = `
-            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix DEBUG flag</div><div class="kanban-card-meta"><span>config.py</span><span class="diff-badge easy">Easy</span></div></div>
-            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Fix email validation</div><div class="kanban-card-meta"><span>auth.py</span><span class="diff-badge medium">Medium</span></div></div>
-            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Add POST /submit</div><div class="kanban-card-meta"><span>server.py</span><span class="diff-badge hard">Hard</span></div></div>
-            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU Cache</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix Pagination</div><div class="kanban-card-meta"><span>database.py</span><span class="diff-badge easy">Easy</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Add RBAC</div><div class="kanban-card-meta"><span>middleware.py</span><span class="diff-badge medium">Medium</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Fix Worker Race</div><div class="kanban-card-meta"><span>worker.py</span><span class="diff-badge hard">Hard</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU+TTL</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
         `;
         updateCounts();
         updateScore(0);
