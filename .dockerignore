@@ -1,0 +1,11 @@
+.venv
+.git
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.db
+.ipynb_checkpoints
+test_deep_audit.py
+verify_hf_deployment.py
+validate-submission.sh
