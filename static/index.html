@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira-to-PR | AI Mock Agency</title>
+    <meta name="description" content="An AI-powered Jira-to-PR simulation environment for OpenEnv. Watch an autonomous agent resolve tickets, edit code, run tests, and submit PRs in real-time.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --bg-card: #1c2128;
+            --border: #30363d;
+            --border-hover: #484f58;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-blue: #58a6ff;
+            --accent-purple: #bc8cff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-orange: #db6d28;
+            --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            --gradient-btn: linear-gradient(135deg, #8b5cf6, #6366f1, #3b82f6);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── HEADER ──────────────────────── */
+        .app-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .logo-badge {
+            font-size: 0.65rem;
+            background: var(--gradient-btn);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .header-right { display: flex; gap: 12px; align-items: center; }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+        }
+        .status-text { font-size: 0.8rem; color: var(--text-secondary); }
+
+        /* ── MAIN LAYOUT ─────────────────── */
+        .app-body {
+            display: flex;
+            height: calc(100vh - 65px);
+        }
+
+        /* ── SIDEBAR ─────────────────────── */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+        .sidebar-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Task selector */
+        .task-list { display: flex; flex-direction: column; gap: 8px; }
+        .task-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .task-item::before {
+            content: '';
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            transition: var(--transition);
+        }
+        .task-item.easy::before { background: var(--accent-green); }
+        .task-item.medium::before { background: var(--accent-yellow); }
+        .task-item.hard::before { background: var(--accent-red); }
+        .task-item:hover { border-color: var(--border-hover); transform: translateX(4px); }
+        .task-item.active { border-color: var(--accent-blue); background: rgba(88, 166, 255, 0.08); }
+        .task-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+        .task-title { font-size: 0.85rem; font-weight: 500; margin-top: 4px; }
+        .diff-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+        .diff-badge.easy { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+        .diff-badge.medium { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+        .diff-badge.hard { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+        .diff-badge.extreme { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+        .task-item.extreme::before { background: var(--accent-purple); }
+
+        /* Launch button */
+        .launch-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-btn);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+        .launch-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        .launch-btn:active { transform: translateY(0); }
+        .launch-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Score card */
+        .score-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+        .score-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); }
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 8px 0;
+        }
+        .score-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            background: var(--gradient-btn);
+            border-radius: 3px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+        }
+
+        /* ── MAIN CONTENT ────────────────── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+        }
+        .tab-btn {
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* Tab panels */
+        .tab-panels { flex: 1; overflow: hidden; }
+        .tab-panel { display: none; height: 100%; overflow-y: auto; padding: 24px; }
+        .tab-panel.active { display: block; }
+
+        /* ── KANBAN ──────────────────────── */
+        .kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; height: 100%; }
+        .kanban-col {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .kanban-col-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kanban-col-count {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+        }
+        .kanban-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-bottom: 10px;
+            transition: var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+        .kanban-card:hover { border-color: var(--border-hover); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .kanban-card-id { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent-blue); }
+        .kanban-card-title { font-size: 0.82rem; font-weight: 500; margin-top: 4px; }
+        .kanban-card-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 8px; display: flex; gap: 8px; }
+
+        /* ── CODE EDITOR ─────────────────── */
+        .editor-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; height: 100%; }
+        .code-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .code-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .code-panel-header .file-icon { color: var(--accent-yellow); }
+        .code-content {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+        }
+        .line-del { background: rgba(248, 81, 73, 0.1); color: var(--accent-red); display: block; padding: 0 8px; border-left: 3px solid var(--accent-red); }
+        .line-add { background: rgba(63, 185, 80, 0.1); color: var(--accent-green); display: block; padding: 0 8px; border-left: 3px solid var(--accent-green); }
+        .line-norm { display: block; padding: 0 8px; border-left: 3px solid transparent; color: var(--text-secondary); }
+
+        /* Terminal */
+        .terminal-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .terminal-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .terminal-dots { display: flex; gap: 6px; }
+        .terminal-dots span { width: 10px; height: 10px; border-radius: 50%; }
+        .terminal-dots span:nth-child(1) { background: var(--accent-red); }
+        .terminal-dots span:nth-child(2) { background: var(--accent-yellow); }
+        .terminal-dots span:nth-child(3) { background: var(--accent-green); }
+        .terminal-body {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            padding: 12px 16px;
+            overflow: auto;
+            color: var(--accent-green);
+            background: #010409;
+        }
+
+        /* ── REWARDS TAB ─────────────────── */
+        .rewards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .reward-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .reward-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-glow); }
+        .reward-icon { font-size: 2rem; margin-bottom: 8px; }
+        .reward-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .reward-val { font-size: 1.8rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+        .log-timeline {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: slideIn 0.3s ease;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-step-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            background: var(--bg-tertiary);
+            color: var(--accent-purple);
+            padding: 2px 10px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .log-message { color: var(--text-secondary); flex: 1; }
+        .log-reward { font-family: 'JetBrains Mono', monospace; font-weight: 600; white-space: nowrap; }
+        .log-reward.positive { color: var(--accent-green); }
+        .log-reward.negative { color: var(--accent-red); }
+        .log-reward.neutral { color: var(--text-muted); }
+
+        /* ── LOGS TAB ──────────────────────── */
+        .logs-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+            height: 100%;
+            overflow: hidden;
+        }
+        .log-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .log-panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-tertiary);
+        }
+        .log-panel-header .dot { width:8px;height:8px;border-radius:50%; }
+        .dot-step { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+        .dot-state { background: var(--accent-purple); box-shadow: 0 0 6px var(--accent-purple); }
+        .log-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.7;
+        }
+        .log-line {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(48,54,61,0.5);
+            animation: slideIn 0.25s ease;
+            word-break: break-all;
+        }
+        .log-line:last-child { border-bottom: none; }
+        .tag-start  { color: var(--accent-green); font-weight:700; }
+        .tag-step   { color: var(--accent-blue); font-weight:700; }
+        .tag-end    { color: var(--accent-purple); font-weight:700; }
+        .tag-state  { color: var(--accent-yellow); font-weight:700; }
+        .kv-key    { color: var(--text-secondary); }
+        .kv-val    { color: var(--text-primary); }
+        .kv-num    { color: var(--accent-green); }
+        .kv-bool-t { color: var(--accent-green); }
+        .kv-bool-f { color: var(--accent-red); }
+        .logs-empty { color:var(--text-muted); font-style:italic; padding:8px 0; }
+
+        /* ── RESPONSIVE ──────────────────── */
+        @media (max-width: 1024px) {
+            .sidebar { width: 220px; min-width: 220px; }
+            .kanban-board { grid-template-columns: repeat(2, 1fr); }
+            .editor-layout { grid-template-columns: 1fr; }
+            .logs-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ── SUMMARY TABLE & MODAL ───────── */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .summary-table th {
+            background: var(--bg-tertiary);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+        .summary-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .summary-table tr:last-child td { border-bottom: none; }
+        .summary-table tr:hover td { background: rgba(88, 166, 255, 0.05); }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--accent-blue); }
+        .modal-close {
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 1.5rem; cursor: pointer; transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--accent-red); }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .event-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 80px;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .event-row:last-child { border-bottom: none; }
+        .event-step { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
+        .event-desc { font-size: 0.9rem; }
+        .event-delta { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @media (max-width: 768px) {
+            .app-body { flex-direction: column; }
+            .sidebar { width: 100%; min-width: unset; flex-direction: row; flex-wrap: wrap; }
+            .kanban-board { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────────── -->
+<header class="app-header">
+    <div class="header-left">
+        <span class="logo">⚡ Jira-to-PR</span>
+        <span class="logo-badge">OpenEnv</span>
+    </div>
+    <div class="header-right">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Ready</span>
+    </div>
+</header>
+
+<!-- ── BODY ──────────────────────────────── -->
+<div class="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3>Sprint Tasks</h3>
+            <div class="task-list" id="taskList">
+                <div class="task-item easy active" data-task="easy-ticket" onclick="selectTask(this)">
+                    <div class="task-id">EASY-101</div>
+                    <div class="task-title">Fix Pagination Off-By-One</div>
+                    <span class="diff-badge easy">Easy</span>
+                </div>
+                <div class="task-item medium" data-task="medium-ticket" onclick="selectTask(this)">
+                    <div class="task-id">MED-201</div>
+                    <div class="task-title">Implement Role-Based Access</div>
+                    <span class="diff-badge medium">Medium</span>
+                </div>
+                <div class="task-item hard" data-task="hard-ticket" onclick="selectTask(this)">
+                    <div class="task-id">HRD-301</div>
+                    <div class="task-title">Fix Refund Race Condition</div>
+                    <span class="diff-badge hard">Hard</span>
+                </div>
+                <div class="task-item extreme" data-task="extreme-ticket" onclick="selectTask(this)">
+                    <div class="task-id">EXT-401</div>
+                    <div class="task-title">Implement Thread-Safe LRU Cache</div>
+                    <span class="diff-badge extreme">Extreme</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="launch-btn" id="launchBtn" onclick="runAgent()">▶ Launch Agent</button>
+
+        <div class="score-card">
+            <div class="score-label">Episode Score</div>
+            <div class="score-value" id="scoreValue">0.00</div>
+            <div class="score-bar-bg"><div class="score-bar-fill" id="scoreBar"></div></div>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Environment</h3>
+            <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.6;">
+                <div>Steps: <span id="stepCount" style="color:var(--text-primary); font-family:'JetBrains Mono',monospace;">0</span></div>
+                <div>Task: <span id="activeTask" style="color:var(--accent-blue); font-family:'JetBrains Mono',monospace;">easy-ticket</span></div>
+                <div>Status: <span id="envStatus" style="color:var(--accent-green);">idle</span></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('kanban', this)">📋 Kanban Board</button>
+            <button class="tab-btn" onclick="switchTab('editor', this)">💻 Code Editor</button>
+            <button class="tab-btn" onclick="switchTab('rewards', this)">📊 Rewards</button>
+            <button class="tab-btn" onclick="switchTab('logs', this)">🔍 Live Logs</button>
+            <button class="tab-btn" onclick="switchTab('summary', this)">📑 Detailed Summary</button>
+        </div>
+        <div class="tab-panels">
+
+            <!-- KANBAN -->
+            <div class="tab-panel active" id="tab-kanban">
+                <div class="kanban-board">
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">📥 Backlog <span class="kanban-col-count" id="backlogCount">4</span></div>
+                        <div id="backlogCards">
+                            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix Pagination</div><div class="kanban-card-meta"><span>database.py</span><span class="diff-badge easy">Easy</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Add RBAC</div><div class="kanban-card-meta"><span>middleware.py</span><span class="diff-badge medium">Medium</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Fix Worker Race</div><div class="kanban-card-meta"><span>worker.py</span><span class="diff-badge hard">Hard</span></div></div>
+                            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU+TTL</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
+                        </div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">🔧 In Progress <span class="kanban-col-count" id="progressCount">0</span></div>
+                        <div id="progressCards"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">🧪 Testing <span class="kanban-col-count" id="testingCount">0</span></div>
+                        <div id="testingCards"></div>
+                    </div>
+                    <div class="kanban-col">
+                        <div class="kanban-col-header">✅ Done <span class="kanban-col-count" id="doneCount">0</span></div>
+                        <div id="doneCards"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CODE EDITOR -->
+            <div class="tab-panel" id="tab-editor">
+                <div class="editor-layout">
+                    <div class="code-panel">
+                        <div class="code-panel-header">
+                            <span class="file-icon">📄</span>
+                            <span id="editorFileName">Awaiting agent...</span>
+                        </div>
+                        <div class="code-content" id="editorCode"><span class="line-norm">// Agent will edit code here during execution</span>
+<span class="line-norm">// Press "Launch Agent" to begin</span></div>
+                    </div>
+                    <div class="terminal-panel">
+                        <div class="terminal-header">
+                            <div class="terminal-dots"><span></span><span></span><span></span></div>
+                            Terminal
+                        </div>
+                        <div class="terminal-body" id="terminalOutput">$ Waiting for agent commands...\n</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REWARDS -->
+            <div class="tab-panel" id="tab-rewards">
+                <div class="rewards-grid">
+                    <div class="reward-card">
+                        <div class="reward-icon">✏️</div>
+                        <div class="reward-label">Edit Rewards</div>
+                        <div class="reward-val" id="editReward" style="color:var(--accent-blue);">0.0</div>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🧪</div>
+                        <div class="reward-label">Test Rewards</div>
+                        <div class="reward-val" id="testReward" style="color:var(--accent-green);">0.0</div>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🚀</div>
+                        <div class="reward-label">PR Reward</div>
+                        <div class="reward-val" id="prReward" style="color:var(--accent-purple);">0.0</div>
+                    </div>
+                </div>
+                <h3 style="margin-bottom:12px; font-size:0.85rem; color:var(--text-secondary);">Step Timeline</h3>
+                <div class="log-timeline" id="logTimeline">
+                    <div class="log-entry">
+                        <span class="log-step-badge">SYS</span>
+                        <span class="log-message">Waiting for agent launch...</span>
+                        <span class="log-reward neutral">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIVE LOGS -->
+            <div class="tab-panel" id="tab-logs">
+                <div class="logs-layout">
+                    <!-- LEFT: Step Logs -->
+                    <div class="log-panel">
+                        <div class="log-panel-header">
+                            <span class="dot dot-step"></span>
+                            Step Logs — [START] / [STEP] / [END]
+                        </div>
+                        <div class="log-panel-body" id="stepLogPanel">
+                            <div class="logs-empty">Logs appear here when the agent runs...</div>
+                        </div>
+                    </div>
+                    <!-- RIGHT: State Snapshots -->
+                    <div class="log-panel">
+                        <div class="log-panel-header">
+                            <span class="dot dot-state"></span>
+                            State Snapshots — GET /state after each step
+                        </div>
+                        <div class="log-panel-body" id="stateLogPanel">
+                            <div class="logs-empty">State snapshots appear here when the agent runs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="tab-panel" id="tab-summary">
+                <div style="padding: 24px;">
+                    <h2 style="font-size: 1.25rem; margin-bottom: 8px;">Sprint Performance Summary</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 24px;">Click any row to see the step-by-step reward breakdown and penalty logic.</p>
+                    
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Status</th>
+                                <th>Edit</th>
+                                <th>Test</th>
+                                <th>PR</th>
+                                <th>Final Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                                    Sprint not started. Launch the agent to generate a summary.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- ── MODAL ─────────────────────────────── -->
+<div class="modal-overlay" id="rewardModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTaskTitle">Ticket Details</h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" id="modalTaskBody">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── STATE ────────────────────────────
+    let selectedTask = 'easy-ticket';
+    let isRunning = false;
+    let totalEditReward = 0;
+    let totalTestReward = 0;
+    let totalPRReward = 0;
+    let stepNum = 0;
+
+    // ── TAB SWITCHING ───────────────────
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // ── LIVE LOG HELPERS ────────────────
+    let stepLogCount = 0;
+    let stateLogCount = 0;
+
+    function appendStepLog(tag, parts) {
+        const panel = document.getElementById('stepLogPanel');
+        if (stepLogCount === 0) panel.innerHTML = '';
+        stepLogCount++;
+        const tagClass = tag === '[START]' ? 'tag-start' : tag === '[END]' ? 'tag-end' : 'tag-step';
+        let html = `<span class="${tagClass}">${tag}</span> `;
+        parts.forEach(([k, v]) => {
+            let vClass = 'kv-val';
+            if (!isNaN(parseFloat(v)) && v !== '') vClass = 'kv-num';
+            else if (v === 'true') vClass = 'kv-bool-t';
+            else if (v === 'false') vClass = 'kv-bool-f';
+            html += `<span class="kv-key">${k}=</span><span class="${vClass}">${v}</span> `;
+        });
+        const div = document.createElement('div');
+        div.className = 'log-line';
+        div.innerHTML = html;
+        panel.appendChild(div);
+        panel.scrollTop = panel.scrollHeight;
+    }
+
+    function appendStateLog(stepLabel, stateObj) {
+        const panel = document.getElementById('stateLogPanel');
+        if (stateLogCount === 0) panel.innerHTML = '';
+        stateLogCount++;
+        const header = document.createElement('div');
+        header.className = 'log-line';
+        header.innerHTML = `<span class="tag-state">◆ STATE</span> <span class="kv-key">after=</span><span class="kv-val">${stepLabel}</span>`;
+        panel.appendChild(header);
+        Object.entries(stateObj).forEach(([k, v]) => {
+            const row = document.createElement('div');
+            row.className = 'log-line';
+            let vStr = JSON.stringify(v);
+            let vClass = 'kv-val';
+            if (typeof v === 'number') vClass = 'kv-num';
+            else if (v === true) { vClass = 'kv-bool-t'; vStr = 'true'; }
+            else if (v === false) { vClass = 'kv-bool-f'; vStr = 'false'; }
+            else if (Array.isArray(v)) vStr = v.join(', ') || '[]';
+            row.innerHTML = `  <span class="kv-key">${k}:</span> <span class="${vClass}">${vStr}</span>`;
+            panel.appendChild(row);
+        });
+        const sep = document.createElement('div');
+        sep.style.cssText = 'color:var(--border);padding:2px 0;';
+        sep.textContent = '─'.repeat(30);
+        panel.appendChild(sep);
+        panel.scrollTop = panel.scrollHeight;
+    }
+
+    async function fetchAndLogState(stepLabel) {
+        try {
+            const res = await fetch('/state');
+            const state = await res.json();
+            appendStateLog(stepLabel, state);
+        } catch(e) {
+            appendStateLog(stepLabel, { error: e.message });
+        }
+    }
+
+    // ── SUMMARY & MODAL LOGIC ───────────
+    let sprintHistory = {}; // Stores {taskId: {status, score, events: [{step, desc, delta}]}}
+
+    function logTaskEvent(taskId, step, desc, delta) {
+        if (!sprintHistory[taskId]) {
+            sprintHistory[taskId] = { status: 'Pending', score: 0, events: [] };
+        }
+        sprintHistory[taskId].events.push({ step, desc, delta });
+    }
+
+    function renderSummaryTable() {
+        const body = document.getElementById('summaryTableBody');
+        if (!body) return;
+        body.innerHTML = '';
+        
+        ALL_TASKS.forEach(t => {
+            const h = sprintHistory[t.taskId] || { status: 'Pending', score: 0, events: [] };
+            
+            // Calculate breakdown for table
+            const editVal = h.events.filter(e => e.desc.includes('Edit')).reduce((acc, e) => acc + e.delta, 0);
+            const testVal = h.events.filter(e => e.desc.includes('Test')).reduce((acc, e) => acc + e.delta, 0);
+            const prVal = h.events.filter(e => e.desc.includes('PR')).reduce((acc, e) => acc + e.delta, 0);
+
+            const row = document.createElement('tr');
+            row.onclick = () => showTaskDetails(t.taskId);
+            row.innerHTML = `
+                <td><div style="font-weight:700;">${t.id}</div><div style="font-size:0.7rem; color:var(--text-secondary);">${t.file}</div></td>
+                <td><span class="diff-badge" style="background:${h.status==='Success'?'var(--accent-green)':'var(--bg-tertiary)'}; color:${h.status==='Success'?'white':'var(--text-secondary)'}">
+                    ${h.status}</span></td>
+                <td style="color:var(--accent-blue);">${editVal.toFixed(2)}</td>
+                <td style="color:var(--accent-green);">${testVal.toFixed(2)}</td>
+                <td style="color:${prVal < 0 ? 'var(--accent-red)' : 'var(--accent-purple)'};">${prVal.toFixed(2)}</td>
+                <td style="font-weight:800; color:var(--text-primary); text-align:right;">${h.score.toFixed(3)}</td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    function showTaskDetails(taskId) {
+        const h = sprintHistory[taskId];
+        if (!h) return;
+        
+        const task = ALL_TASKS.find(t => t.taskId === taskId);
+        document.getElementById('modalTaskTitle').textContent = `${task.id}: ${task.title}`;
+        
+        let html = '';
+        h.events.forEach(e => {
+            const color = e.delta > 0 ? 'var(--accent-green)' : e.delta < 0 ? 'var(--accent-red)' : 'var(--text-muted)';
+            const prefix = e.delta > 0 ? '+' : '';
+            html += `
+                <div class="event-row">
+                    <div class="event-step">Step ${e.step}</div>
+                    <div class="event-desc">${e.desc}</div>
+                    <div class="event-delta" style="color:${color}">${prefix}${e.delta.toFixed(2)}</div>
+                </div>
+            `;
+        });
+        
+        html += `
+            <div style="margin-top:24px; padding:16px; background:var(--bg-tertiary); border-radius:var(--radius-sm); border-left:4px solid var(--accent-blue);">
+                <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-secondary); margin-bottom:4px;">Final Accuracy Score</div>
+                <div style="font-size:1.5rem; font-weight:900;">${h.score.toFixed(3)} / 1.000</div>
+            </div>
+        `;
+        
+        document.getElementById('modalTaskBody').innerHTML = html;
+        document.getElementById('rewardModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('rewardModal').style.display = 'none';
+    }
+
+    window.onclick = (e) => { if(e.target === document.getElementById('rewardModal')) closeModal(); }
+    window.onkeydown = (e) => { if(e.key === 'Escape') closeModal(); }
+
+    // ── TASK SELECTION ──────────────────
+    function selectTask(el) {
+        if (isRunning) return;
+        document.querySelectorAll('.task-item').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        selectedTask = el.dataset.task;
+        document.getElementById('activeTask').textContent = selectedTask;
+    }
+
+    // ── KANBAN HELPERS ──────────────────
+    function moveToColumn(cardHtml, from, to) {
+        const fromEl = document.getElementById(from);
+        const toEl = document.getElementById(to);
+        toEl.insertAdjacentHTML('beforeend', cardHtml);
+        updateCounts();
+    }
+
+    function updateCounts() {
+        document.getElementById('backlogCount').textContent = document.getElementById('backlogCards').children.length;
+        document.getElementById('progressCount').textContent = document.getElementById('progressCards').children.length;
+        document.getElementById('testingCount').textContent = document.getElementById('testingCards').children.length;
+        document.getElementById('doneCount').textContent = document.getElementById('doneCards').children.length;
+    }
+
+    // ── SCORE UPDATE ────────────────────
+    function updateScore(score) {
+        const display = Math.max(0, Math.min(1, score)).toFixed(2);
+        document.getElementById('scoreValue').textContent = display;
+        document.getElementById('scoreBar').style.width = (score * 100) + '%';
+    }
+
+    // ── TERMINAL APPEND ─────────────────
+    function appendTerminal(text) {
+        const term = document.getElementById('terminalOutput');
+        term.textContent += text + '\n';
+        term.scrollTop = term.scrollHeight;
+    }
+
+    // ── LOG ENTRY ───────────────────────
+    function addLogEntry(step, message, reward) {
+        const timeline = document.getElementById('logTimeline');
+        const cls = reward > 0 ? 'positive' : reward < 0 ? 'negative' : 'neutral';
+        const sign = reward > 0 ? '+' : '';
+        timeline.insertAdjacentHTML('beforeend', `
+            <div class="log-entry">
+                <span class="log-step-badge">Step ${step}</span>
+                <span class="log-message">${message}</span>
+                <span class="log-reward ${cls}">${sign}${reward.toFixed(2)}</span>
+            </div>
+        `);
+        timeline.scrollTop = timeline.scrollHeight;
+    }
+
+    // ── CODE DISPLAY ────────────────────
+    function showCode(filename, lines) {
+        document.getElementById('editorFileName').textContent = filename;
+        const codeEl = document.getElementById('editorCode');
+        codeEl.innerHTML = lines.map(l => {
+            const escaped = l.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            if (l.type === 'add') return `<span class="line-add">+ ${escaped}</span>`;
+            if (l.type === 'del') return `<span class="line-del">- ${escaped}</span>`;
+            return `<span class="line-norm">  ${escaped}</span>`;
+        }).join('\n');
+    }
+
+    // ── AGENT SIMULATION ────────────────
+    // Task metadata
+    const ALL_TASKS = [
+        {taskId:'easy-ticket', id:'EASY-101', title:'Fix Pagination', file:'database.py', diff:'easy'},
+        {taskId:'medium-ticket', id:'MED-201', title:'Add RBAC', file:'middleware.py', diff:'medium'},
+        {taskId:'hard-ticket', id:'HRD-301', title:'Fix Worker Race', file:'worker.py', diff:'hard'},
+        {taskId:'extreme-ticket', id:'EXT-401', title:'Implement LRU+TTL', file:'cache.py', diff:'extreme'}
+    ];
+
+    const FIXES = {
+        'easy-ticket': {
+            file: 'database.py',
+            content: "class Database:\n    def __init__(self):\n        self.data = list(range(100))\n\n    def get_page(self, page: int, size: int):\n        start = (page - 1) * size\n        end = start + size\n        return self.data[start:end]\n",
+            diff: [
+                {type:'norm', text:"class Database:"},
+                {type:'norm', text:"    def __init__(self):"},
+                {type:'norm', text:"        self.data = list(range(100))"},
+                {type:'norm', text:""},
+                {type:'norm', text:"    def get_page(self, page: int, size: int):"},
+                {type:'norm', text:"        start = (page - 1) * size"},
+                {type:'norm', text:"        end = start + size"},
+                {type:'del',  text:"        # BUG: The slice is cutting off the last element!"},
+                {type:'del',  text:"        return self.data[start:end-1]"},
+                {type:'add',  text:"        return self.data[start:end]"},
+            ]
+        },
+        'medium-ticket': {
+            file: 'middleware.py',
+            content: "def authorize_request(token: str, required_role: str) -> bool:\n    \"\"\"Validates JWT-like tokens for specific roles.\"\"\"\n    if not token:\n        return False\n    \n    parsed_token = token.split('.')\n    if len(parsed_token) != 3:\n        return False\n        \n    user_role = parsed_token[1]\n    return user_role == required_role\n",
+            diff: [
+                {type:'norm', text:"    if len(parsed_token) != 3:"},
+                {type:'norm', text:"        return False"},
+                {type:'norm', text:"        "},
+                {type:'del',  text:"    # BUG: We are just returning True instead of checking role!"},
+                {type:'del',  text:"    # Token format is 'header.role.signature'"},
+                {type:'del',  text:"    return True"},
+                {type:'add',  text:"    user_role = parsed_token[1]"},
+                {type:'add',  text:"    return user_role == required_role"},
+            ]
+        },
+        'hard-ticket': {
+            file: 'worker.py',
+            content: "import time\nimport threading\n\nclass RefundWorker:\n    def __init__(self):\n        self.processed = set()\n        self.lock = threading.Lock()\n\n    def process_refund(self, transaction_id: str):\n        with self.lock:\n            if transaction_id in self.processed:\n                return False\n            \n            # Simulate long I/O delay\n            time.sleep(0.1)\n            \n            self.processed.add(transaction_id)\n            return True\n",
+            diff: [
+                {type:'add',  text:"import threading"},
+                {type:'norm', text:""},
+                {type:'norm', text:"class RefundWorker:"},
+                {type:'del',  text:"    def __init__(self):"},
+                {type:'del',  text:"        self.processed = set()"},
+                {type:'add',  text:"    def __init__(self):"},
+                {type:'add',  text:"        self.processed = set()"},
+                {type:'add',  text:"        self.lock = threading.Lock()"},
+                {type:'norm', text:""},
+                {type:'del',  text:"    def process_refund(self, transaction_id: str):"},
+                {type:'del',  text:"        if transaction_id in self.processed:"},
+                {type:'add',  text:"    def process_refund(self, transaction_id: str):"},
+                {type:'add',  text:"        with self.lock:"},
+                {type:'add',  text:"            if transaction_id in self.processed:"},
+                {type:'norm', text:"                return False"},
+            ]
+        },
+        'extreme-ticket': {
+            file: 'cache.py',
+            content: "import threading\nimport time\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = {}\n        self.lock = threading.Lock()\n        # Logic fixed via PR testing loop\n",
+            diff: [
+                {type:'add', text:"import threading"},
+                {type:'add', text:"import time"},
+                {type:'norm', text:""},
+                {type:'norm', text:"class ThreadSafeLRUCache:"},
+                {type:'norm', text:"    def __init__(self, capacity: int, ttl_seconds: int):"},
+                {type:'norm', text:"        self.capacity = capacity"},
+                {type:'norm', text:"        self.ttl = ttl_seconds"},
+                {type:'del',  text:"        # TODO: Implement"},
+                {type:'add',  text:"        self.cache = {}"},
+                {type:'add',  text:"        self.lock = threading.Lock()"},
+                {type:'add',  text:"        # Logic fixed via PR testing loop"},
+            ]
+        }
+    };
+
+    function removeBacklogCard(taskId) {
+        const backlog = document.getElementById('backlogCards');
+        const taskIdMap = {'easy-ticket':'EASY-101','medium-ticket':'MED-201','hard-ticket':'HRD-301', 'extreme-ticket':'EXT-401'};
+        const targetId = taskIdMap[taskId];
+        Array.from(backlog.children).forEach(card => {
+            if (card.querySelector('.kanban-card-id')?.textContent === targetId) {
+                card.remove();
+            }
+        });
+    }
+
+    async function runSingleTask(t) {
+        const fix = FIXES[t.taskId];
+        document.getElementById('activeTask').textContent = t.taskId;
+
+        // Highlight sidebar task
+        document.querySelectorAll('.task-item').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.task-item[data-task="${t.taskId}"]`)?.classList.add('active');
+
+        let taskStep = 0;
+        let lastReward = 0;
+
+        // 1. RESET
+        appendTerminal('\n── Task: ' + t.id + ' ──────────────────');
+        appendTerminal('$ Resetting environment for task: ' + t.taskId);
+        const resetRes = await fetch('/reset', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({task_id: t.taskId})
+        });
+        const resetData = await resetRes.json();
+        appendTerminal('> ' + resetData.observation.terminal_output);
+        taskStep = 1;
+        lastReward = resetData.observation.reward;
+        appendStepLog('[START]', [['task', t.taskId], ['env', 'jira-to-pr'], ['model', 'ui-agent']]);
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'reset'], ['reward', resetData.observation.reward.toFixed(2)], ['done', resetData.observation.done]]);
+        fetchAndLogState('reset');
+        logTaskEvent(t.taskId, taskStep, 'Environment Reset', 0);
+
+        // Move card: Backlog → In Progress
+        removeBacklogCard(t.taskId);
+        document.getElementById('progressCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>${t.file}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+        updateCounts();
+
+        await sleep(600);
+
+        // 2. READ TICKET
+        stepNum++;
+        appendTerminal('$ read_ticket ' + t.taskId);
+        const readRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({read_ticket: {ticket_id: t.taskId}})
+        });
+        const readData = await readRes.json();
+        appendTerminal('> ' + truncate(readData.observation.terminal_output, 200));
+        addLogEntry(stepNum, 'Read ticket: ' + t.id, 0);
+        document.getElementById('stepCount').textContent = stepNum;
+        taskStep++;
+        const readDelta = readData.observation.reward - lastReward;
+        lastReward = readData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'read_ticket'], ['reward', readData.observation.reward.toFixed(2)], ['done', readData.observation.done]]);
+        fetchAndLogState('read_ticket');
+        logTaskEvent(t.taskId, taskStep, 'Read Ticket: ' + t.id, readDelta);
+
+        await sleep(800);
+
+        // 3. EDIT FILE
+        stepNum++;
+        showCode(fix.file, fix.diff);
+        appendTerminal('$ edit_file ' + fix.file);
+        const editRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({edit_file: {file_path: fix.file, new_content: fix.content}})
+        });
+        const editData = await editRes.json();
+        appendTerminal('> ' + editData.observation.terminal_output);
+        totalEditReward += 0.2;
+        document.getElementById('editReward').textContent = (totalEditReward / ALL_TASKS.length).toFixed(2);
+        addLogEntry(stepNum, 'Edited ' + fix.file, 0.2);
+        document.getElementById('stepCount').textContent = stepNum;
+        taskStep++;
+        const editDelta = editData.observation.reward - lastReward;
+        lastReward = editData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'edit_file:'+fix.file], ['reward', editData.observation.reward.toFixed(2)], ['done', editData.observation.done]]);
+        fetchAndLogState('edit_file');
+        logTaskEvent(t.taskId, taskStep, 'Code Edit: ' + fix.file, editDelta);
+
+        await sleep(1000);
+
+        // 4. RUN TESTS — Move to Testing column
+        stepNum++;
+        document.getElementById('progressCards').innerHTML = '';
+        document.getElementById('testingCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id}</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Running pytest...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+        updateCounts();
+
+        appendTerminal('$ run_tests test_task.py');
+        const testRes = await fetch('/step', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({run_tests: {target: 'test_task.py'}})
+        });
+        const testData = await testRes.json();
+        appendTerminal('> Tests result: ' + truncate(testData.observation.terminal_output, 200));
+        const testPassed = testData.observation.terminal_output.toLowerCase().includes('passed');
+        const testReward = testPassed ? 0.3 : -0.1;
+        totalTestReward += testReward;
+        document.getElementById('testReward').textContent = (totalTestReward / ALL_TASKS.length).toFixed(2);
+        taskStep++;
+        const testDelta = testData.observation.reward - lastReward;
+        lastReward = testData.observation.reward;
+        appendStepLog('[STEP]', [['step', taskStep], ['action', 'run_tests'], ['reward', testData.observation.reward.toFixed(2)], ['done', testData.observation.done]]);
+        fetchAndLogState('run_tests');
+        addLogEntry(stepNum, testPassed ? 'Tests PASSED' : 'Tests FAILED', testReward);
+        document.getElementById('stepCount').textContent = stepNum;
+        logTaskEvent(t.taskId, taskStep, 'Run Tests: ' + (testPassed ? 'PASS' : 'FAIL'), testDelta);
+
+        await sleep(1000);
+
+        let isMerged = false;
+        let prData;
+        let attempts = 0;
+        const MAX_ATTEMPTS = 3;
+        
+        while (!isMerged && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            // 5. SUBMIT PR
+            stepNum++;
+            appendTerminal('$ submit_pr ' + t.taskId);
+            const prRes = await fetch('/step', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({submit_pr: {ticket_id: t.taskId, title: 'Fix: ' + t.title}})
+            });
+            prData = await prRes.json();
+            appendTerminal('> ' + truncate(prData.observation.terminal_output, 400));
+            isMerged = prData.observation.terminal_output.includes('Merged');
+            
+            // For the summary cards, we count a merge as the full 0.5 completion credit
+            const cardReward = isMerged ? 0.5 : 0.0; 
+            if (isMerged) totalPRReward += 0.5; 
+            
+            document.getElementById('prReward').textContent = (totalPRReward / ALL_TASKS.length).toFixed(2);
+            addLogEntry(stepNum, isMerged ? 'PR Merged! ✅' : 'PR Rejected ❌', isMerged ? 0.5 : -0.2);
+            document.getElementById('stepCount').textContent = stepNum;
+
+            taskStep++;
+            const prDelta = prData.observation.reward - lastReward;
+            lastReward = prData.observation.reward;
+            appendStepLog('[STEP]', [['step', taskStep], ['action', 'submit_pr'], ['reward', prData.observation.reward.toFixed(2)], ['done', prData.observation.done]]);
+            fetchAndLogState('submit_pr');
+            logTaskEvent(t.taskId, taskStep, isMerged ? 'PR Merged ✅' : 'PR Rejected ❌', prDelta);
+
+            if (isMerged) {
+                // Move: Testing → Done
+                document.getElementById('testingCards').innerHTML = '';
+                document.getElementById('doneCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ✅</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Score: ${prData.reward.toFixed(2)}</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
+                updateCounts();
+            } else {
+                // Move back to In Progress
+                document.getElementById('testingCards').innerHTML = '';
+                document.getElementById('progressCards').insertAdjacentHTML('beforeend', `<div class="kanban-card"><div class="kanban-card-id">${t.id} ❌</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>Fixing feedback...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`);
+                updateCounts();
+                
+                await sleep(1500);
+                
+                if (t.taskId === 'extreme-ticket' && attempts < MAX_ATTEMPTS) {
+                    appendTerminal('\n$ edit_file cache.py (Fixing QA Feedback)');
+                    let fixContent, diffArray;
+                    if (attempts === 1) {
+                        fixContent = "import threading\nimport time\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = {}\n        self.lock = threading.Lock()\n    def get(self, key):\n        with self.lock:\n            return self.cache.get(key)\n    def put(self, key, value):\n        with self.lock:\n            self.cache[key] = value\n";
+                        diffArray = [
+                            {type:'norm', text:"import threading"},
+                            {type:'norm', text:"import time"},
+                            {type:'norm', text:"class ThreadSafeLRUCache:"},
+                            {type:'add',  text:"    def get(self, key):"},
+                            {type:'add',  text:"        with self.lock:"},
+                            {type:'add',  text:"            return self.cache.get(key)"},
+                            {type:'add',  text:"    def put(self, key, value):"},
+                            {type:'add',  text:"        with self.lock:"},
+                            {type:'add',  text:"            self.cache[key] = value"},
+                        ];
+                    } else {
+                        fixContent = "import time\nimport threading\nfrom collections import OrderedDict\n\nclass ThreadSafeLRUCache:\n    def __init__(self, capacity: int, ttl_seconds: int):\n        self.capacity = capacity\n        self.ttl = ttl_seconds\n        self.cache = OrderedDict()\n        self.lock = threading.Lock()\n        \n    def get(self, key):\n        with self.lock:\n            if key not in self.cache: return None\n            val, ts = self.cache[key]\n            if time.time() - ts > self.ttl:\n                del self.cache[key]\n                return None\n            self.cache.move_to_end(key)\n            return val\n            \n    def put(self, key, value):\n        with self.lock:\n            if key in self.cache:\n                del self.cache[key]\n            elif len(self.cache) >= self.capacity:\n                self.cache.popitem(last=False)\n            self.cache[key] = (value, time.time())\n";
+                        diffArray = [
+                            {type:'norm', text:"import threading"},
+                            {type:'add', text:"from collections import OrderedDict"},
+                            {type:'norm', text:"class ThreadSafeLRUCache:"},
+                            {type:'add',  text:"    # Fixed: Replaced standard dict with OrderedDict"},
+                            {type:'add',  text:"    # Fixed: Added ttl timestamp logic and LRU eviction policy!"},
+                        ];
+                    }
+                    showCode('cache.py', diffArray);
+                    const fixRes = await fetch('/step', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({edit_file: {file_path: 'cache.py', new_content: fixContent}})
+                    });
+                    const fixData = await fixRes.json();
+                    appendTerminal('> ' + fixData.observation.terminal_output);
+                    
+                    taskStep++;
+                    const fixDelta = fixData.observation.reward - lastReward;
+                    lastReward = fixData.observation.reward;
+                    appendStepLog('[STEP]', [['step', taskStep], ['action', 'edit_file:cache.py (retry)'], ['reward', fixData.observation.reward.toFixed(2)], ['done', fixData.observation.done]]);
+                    fetchAndLogState('edit_file_retry');
+                    logTaskEvent(t.taskId, taskStep, 'Code Edit (Retry)', fixDelta);
+                    
+                    await sleep(1000);
+                    // Move to testing again
+                    document.getElementById('progressCards').innerHTML = '';
+                    document.getElementById('testingCards').innerHTML = `<div class="kanban-card"><div class="kanban-card-id">${t.id} 🤖</div><div class="kanban-card-title">${t.title}</div><div class="kanban-card-meta"><span>QA Retesting...</span><span class="diff-badge ${t.diff}">${t.diff}</span></div></div>`;
+                    updateCounts();
+                    await sleep(1000);
+                } else {
+                    break; // stop loop for others if failed
+                }
+            }
+        }
+        
+        if (!isMerged) {
+            appendTerminal('> ERROR: PR still failing after max attempts. Canceling task loop to prevent infinite retry.');
+            sprintHistory[t.taskId].status = 'Failed';
+        } else {
+            sprintHistory[t.taskId].status = 'Success';
+        }
+
+        const finalScore = prData ? prData.reward : 0;
+        sprintHistory[t.taskId].score = finalScore;
+        renderSummaryTable();
+
+        appendStepLog('[END]', [['success', isMerged], ['steps', taskStep], ['score', finalScore.toFixed(3)], ['rewards', 'denormalized']]);
+        
+        return finalScore;
+    }
+
+    async function runAgent() {
+        if (isRunning) return;
+        isRunning = true;
+
+        const btn = document.getElementById('launchBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Running all tasks...';
+        document.getElementById('envStatus').textContent = 'running';
+        document.getElementById('envStatus').style.color = 'var(--accent-yellow)';
+        document.getElementById('statusText').textContent = 'Agent active';
+        document.getElementById('terminalOutput').textContent = '';
+
+        // Reset state
+        totalEditReward = 0; totalTestReward = 0; totalPRReward = 0; stepNum = 0;
+        document.getElementById('editReward').textContent = '0.0';
+        document.getElementById('testReward').textContent = '0.0';
+        document.getElementById('prReward').textContent = '0.0';
+        document.getElementById('logTimeline').innerHTML = '';
+        document.getElementById('doneCards').innerHTML = '';
+        document.getElementById('progressCards').innerHTML = '';
+        document.getElementById('testingCards').innerHTML = '';
+        document.getElementById('stepLogPanel').innerHTML = '<div class="logs-empty">Logs appear here when the agent runs...</div>';
+        document.getElementById('stateLogPanel').innerHTML = '<div class="logs-empty">State snapshots appear here when the agent runs...</div>';
+        stepLogCount = 0; stateLogCount = 0;
+        sprintHistory = {};
+        renderSummaryTable();
+
+        // Restore backlog cards
+        document.getElementById('backlogCards').innerHTML = `
+            <div class="kanban-card"><div class="kanban-card-id">EASY-101</div><div class="kanban-card-title">Fix Pagination</div><div class="kanban-card-meta"><span>database.py</span><span class="diff-badge easy">Easy</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">MED-201</div><div class="kanban-card-title">Add RBAC</div><div class="kanban-card-meta"><span>middleware.py</span><span class="diff-badge medium">Medium</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">HRD-301</div><div class="kanban-card-title">Fix Worker Race</div><div class="kanban-card-meta"><span>worker.py</span><span class="diff-badge hard">Hard</span></div></div>
+            <div class="kanban-card"><div class="kanban-card-id">EXT-401</div><div class="kanban-card-title">Implement LRU+TTL</div><div class="kanban-card-meta"><span>cache.py</span><span class="diff-badge extreme">Extreme</span></div></div>
+        `;
+        updateCounts();
+        updateScore(0);
+
+        let totalScore = 0;
+
+        try {
+            addLogEntry('—', 'Starting sprint: 4 tasks queued', 0);
+
+            for (const task of ALL_TASKS) {
+                await sleep(400);
+                const taskScore = await runSingleTask(task);
+                totalScore += Math.max(0, taskScore);
+            }
+
+            const avgScore = totalScore / ALL_TASKS.length;
+            updateScore(avgScore);
+            addLogEntry('END', `Sprint complete! Avg score: ${avgScore.toFixed(2)}`, avgScore);
+
+            document.getElementById('envStatus').textContent = 'completed';
+            document.getElementById('envStatus').style.color = 'var(--accent-green)';
+            document.getElementById('statusText').textContent = 'Sprint complete';
+            appendTerminal('\n══ ALL TASKS FINISHED ══');
+
+        } catch (err) {
+            appendTerminal('ERROR: ' + err.message);
+            document.getElementById('envStatus').textContent = 'error';
+            document.getElementById('envStatus').style.color = 'var(--accent-red)';
+        }
+
+        btn.disabled = false;
+        btn.textContent = '▶ Launch Agent';
+        isRunning = false;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function truncate(s, n) { return s.length > n ? s.substring(0, n) + '...' : s; }
+</script>
+
+</body>
+</html>
