@@ -214,7 +214,8 @@ class MockAgencyEnv:
         obs = AgencyObservation(
             current_ticket=f"[{task['title']}]\n{task['description']}",
             terminal_output=f"Environment reset. Task: {self.current_task}. Sandbox ready.",
-            files_in_repo=os.listdir(self.temp_dir),
+            observation_text=f"Environment reset. Task: {self.current_task}.",
+            files=os.listdir(self.temp_dir),
             reward=0.0,
             done=False,
         )
@@ -326,7 +327,7 @@ class MockAgencyEnv:
             step_count=self.step_count,
             score=self.score,
             done=self.done,
-            files_in_repo=os.listdir(self.temp_dir) if self.temp_dir and os.path.exists(self.temp_dir) else [],
+            files=os.listdir(self.temp_dir) if self.temp_dir and os.path.exists(self.temp_dir) else [],
         )
 
     # ── CLOSE ──────────────────────────────
@@ -347,7 +348,8 @@ class MockAgencyEnv:
         obs = AgencyObservation(
             current_ticket=f"Active task: {self.current_task}",
             terminal_output=output,
-            files_in_repo=os.listdir(self.temp_dir) if self.temp_dir and os.path.exists(self.temp_dir) else [],
+            observation_text=output,
+            files=os.listdir(self.temp_dir) if self.temp_dir and os.path.exists(self.temp_dir) else [],
             reward=self.score,
             done=done,
         )

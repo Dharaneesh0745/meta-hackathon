@@ -39,7 +39,8 @@ class AgencyAction(BaseModel):
 class AgencyObservation(BaseModel):
     current_ticket: Optional[str] = Field(None, description="Current Jira ticket content.")
     terminal_output: str = Field("", description="Output from the last command or action.")
-    files_in_repo: List[str] = Field(default_factory=list, description="List of files in the current repository.")
+    observation_text: str = Field("", description="Summary of the observation for judge logs.")
+    files: List[str] = Field(default_factory=list, description="List of files in the current repository.")
     reward: float = Field(0.0, description="Cumulative reward so far.")
     done: bool = Field(False, description="Whether the episode is finished.")
 
@@ -54,7 +55,7 @@ class AgencyState(BaseModel):
     step_count: int = Field(0, description="Number of steps taken so far.")
     score: float = Field(0.0, description="Cumulative score [0.0, 1.0].")
     done: bool = Field(False, description="Whether the episode is complete.")
-    files_in_repo: List[str] = Field(default_factory=list, description="Files currently in the sandbox.")
+    files: List[str] = Field(default_factory=list, description="Files currently in the sandbox.")
 
 
 # ─────────────────────────────────────────────

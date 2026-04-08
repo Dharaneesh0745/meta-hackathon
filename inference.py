@@ -85,7 +85,7 @@ def get_model_action(client: OpenAI, obs, step: int) -> str:
     user_prompt = f"""Current Observation:
 Ticket: {obs.current_ticket}
 Terminal Output: {obs.terminal_output}
-Files: {obs.files_in_repo}
+Files: {obs.files}
 Step: {step}
 
 What is your next action? Reply with a single JSON object."""
