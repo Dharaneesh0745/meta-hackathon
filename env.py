@@ -181,6 +181,14 @@ class MockAgencyEnv:
         self.last_action_error: Optional[str] = None
         self.milestones = {"edited": False, "tested": False}
 
+    @property
+    def tasks(self):
+        """Official task registry for the OpenEnv validator."""
+        return [
+            {"id": tid, "name": t["title"], "description": t["description"]}
+            for tid, t in TASKS.items()
+        ]
+
     # ── RESET ──────────────────────────────
 
     async def reset(self, task_id: Optional[str] = None) -> StepResult:

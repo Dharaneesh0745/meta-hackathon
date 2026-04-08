@@ -116,10 +116,16 @@ async def get_state():
 
 @app.get("/tasks")
 async def list_tasks():
-    """List all available tasks."""
+    """List all available tasks with grader flags for the validator."""
     return [
-        {"id": tid, "title": t["title"], "description": t["description"], "target_file": t["target_file"]}
-        for tid, t in TASKS.items()
+        {
+            "id": t["id"], 
+            "title": t["name"], 
+            "description": t["description"],
+            "has_grader": True,
+            "reward_type": "incremental"
+        }
+        for t in _http_env.tasks
     ]
 
 

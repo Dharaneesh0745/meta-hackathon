@@ -4,15 +4,19 @@ description: "A Mock Software Agency environment where an AI agent resolves Jira
 tasks:
   - id: "easy-ticket"
     difficulty: "easy"
+    has_grader: true
     description: "Fix a pagination off-by-one error in database.py — the data slicer drops the last item of each page."
   - id: "medium-ticket"
     difficulty: "medium"
+    has_grader: true
     description: "Implement Role-Based Access Control in middleware.py — the token parser never validates the user role against the required role."
   - id: "hard-ticket"
     difficulty: "hard"
+    has_grader: true
     description: "Fix a race condition in worker.py — the refund processor lacks atomicity, allowing concurrent double-refunds."
   - id: "extreme-ticket"
     difficulty: "extreme"
+    has_grader: true
     description: "Implement a Thread-Safe LRU Cache with TTL in cache.py — must enforce eviction policy, capacity limits, and TTL expiry under concurrent load."
 entrypoint:
   type: "python"
