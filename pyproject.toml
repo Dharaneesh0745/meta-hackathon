@@ -27,5 +27,5 @@ dev = [
 server = "server.app:main"
 
 [tool.setuptools]
-packages = ["server", "agentic_os_env"]
+packages = ["server", "jira_agency_env"]
 py-modules = ["inference", "test_hf_space"]

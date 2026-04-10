@@ -6,24 +6,24 @@ tasks:
   - id: "easy-ticket"
     difficulty: "easy"
     has_grader: true
-    grader: "agentic_os_env.graders:grade_easy"
+    grader: "jira_agency_env.graders:grade_easy"
     description: "Fix a pagination off-by-one error in database.py — the data slicer drops the last item of each page."
   - id: "medium-ticket"
     difficulty: "medium"
     has_grader: true
-    grader: "agentic_os_env.graders:grade_medium"
+    grader: "jira_agency_env.graders:grade_medium"
     description: "Implement Role-Based Access Control in middleware.py — the token parser never validates the user role against the required role."
   - id: "hard-ticket"
     difficulty: "hard"
     has_grader: true
-    grader: "agentic_os_env.graders:grade_hard"
+    grader: "jira_agency_env.graders:grade_hard"
     description: "Fix a race condition in worker.py — the refund processor lacks atomicity, allowing concurrent double-refunds."
   - id: "extreme-ticket"
     difficulty: "extreme"
     has_grader: true
-    grader: "agentic_os_env.graders:grade_extreme"
+    grader: "jira_agency_env.graders:grade_extreme"
     description: "Implement a Thread-Safe LRU Cache with TTL in cache.py — must enforce eviction policy, capacity limits, and TTL expiry under concurrent load."
 entrypoint:
   type: "python"
-  path: "agentic_os_env/env.py"
+  path: "jira_agency_env/agency_env.py"
   class: "MockAgencyEnv"

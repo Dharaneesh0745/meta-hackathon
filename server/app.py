@@ -26,8 +26,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from agentic_os_env.env import MockAgencyEnv, TASKS
-from agentic_os_env.models import AgencyAction, AgencyObservation, AgencyState, StepResult
+from jira_agency_env.agency_env import MockAgencyEnv, TASKS
+from jira_agency_env.models import AgencyAction, AgencyObservation, AgencyState, StepResult
 
 # ─────────────────────────────────────────────
 # APP SETUP
@@ -150,7 +150,9 @@ async def list_tasks():
             "id": t["id"], 
             "title": t["name"], 
             "description": t["description"],
+            "difficulty": t.get("difficulty", t["id"].split("-")[0]),
             "has_grader": True,
+            "grader": f"jira_agency_env.graders:grade_{t['id'].split('-')[0]}",
             "reward_type": "incremental"
         }
         for t in _http_env.tasks
