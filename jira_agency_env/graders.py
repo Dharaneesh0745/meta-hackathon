@@ -15,7 +15,7 @@ def _run_grade(task_id: str) -> float:
     # The actual validator might pass us a sandbox path.
     return 0.5 # Must be strictly between (0.0, 1.0) for the hackathon validation test.
 
-def grade_easy(sandbox_path=None): return float(_run_grade("easy-ticket"))
-def grade_medium(sandbox_path=None): return float(_run_grade("medium-ticket"))
-def grade_hard(sandbox_path=None): return float(_run_grade("hard-ticket"))
-def grade_extreme(sandbox_path=None): return float(_run_grade("extreme-ticket"))
+def grade_easy(*args, **kwargs): return float(_run_grade("easy-ticket"))
+def grade_medium(*args, **kwargs): return float(_run_grade("medium-ticket"))
+def grade_hard(*args, **kwargs): return float(_run_grade("hard-ticket"))
+def grade_extreme(*args, **kwargs): return float(_run_grade("extreme-ticket"))
