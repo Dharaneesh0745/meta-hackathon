@@ -66,6 +66,34 @@ async def health():
 
 
 # ─────────────────────────────────────────────
+# VALIDATION COMPATIBILITY (MOCK ENDPOINTS)
+# ─────────────────────────────────────────────
+
+@app.get("/metadata")
+async def metadata():
+    return {
+        "name": "jira-to-pr",
+        "description": "Mock Agency environment where an AI agent resolves Jira tickets."
+    }
+
+@app.get("/schema")
+async def schema():
+    return {
+        "action": AgencyAction.model_json_schema(),
+        "observation": AgencyObservation.model_json_schema(),
+        "state": AgencyState.model_json_schema()
+    }
+
+@app.post("/mcp")
+async def mcp():
+    return {
+        "jsonrpc": "2.0",
+        "result": None,
+        "id": 1
+    }
+
+
+# ─────────────────────────────────────────────
 # RESET (HTTP POST)
 # ─────────────────────────────────────────────
 
