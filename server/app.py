@@ -26,8 +26,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from env import MockAgencyEnv, TASKS
-from models import AgencyAction, AgencyObservation, AgencyState, StepResult
+from agentic_os_env.env import MockAgencyEnv, TASKS
+from agentic_os_env.models import AgencyAction, AgencyObservation, AgencyState, StepResult
 
 # ─────────────────────────────────────────────
 # APP SETUP

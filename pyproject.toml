@@ -27,5 +27,5 @@ dev = [
 server = "server.app:main"
 
 [tool.setuptools]
-packages = ["server"]
-py-modules = ["env", "models", "inference", "test_hf_space"]
+packages = ["server", "agentic_os_env"]
+py-modules = ["inference", "test_hf_space"]

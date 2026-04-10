@@ -19,8 +19,8 @@ from typing import List, Optional
 
 from openai import OpenAI
 
-from models import AgencyAction
-from env import MockAgencyEnv
+from agentic_os_env.models import AgencyAction
+from agentic_os_env.env import MockAgencyEnv
 
 # ─────────────────────────────────────────────
 # CONFIGURATION (from environment variables)
